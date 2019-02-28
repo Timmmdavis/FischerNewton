@@ -1,0 +1,11 @@
+name = "FischerNewton"
+uuid = "c8104aa0-3b89-11e9-0761-c1f9341838a7"
+authors = ["Tim Davis <davis@gfz-potsdam.de>"]
+version = "0.1.0"
+
+[deps]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
