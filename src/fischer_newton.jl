@@ -154,9 +154,6 @@ while (iter <= max_iter )
 	end
 	
 
-	
-
-	
 	#--- Solve the Newton system --------------------------------------------
 	#--- First we find the Jacobian matrix. We wish to avoid singular points
 	#--- in Jacobian of the Fischer function
@@ -164,11 +161,18 @@ while (iter <= max_iter )
 	I.= (S.==false);                     		# Bitmask for non-singular indices
 	
 	Indx=findall(I)
-
-	p[Indx].= (x[Indx]./(((y[Indx].^2) .+(x[Indx].^2)).^0.5)).-1.0;
-	q[Indx].= (y[Indx]./(((y[Indx].^2) .+(x[Indx].^2)).^0.5)).-1.0;
 	
-	J[Indx,Indx].=Diagonal(p[Indx]).+A[Indx,Indx].*q[Indx];
+	for i=1:length(Indx)
+		p[Indx[i]]=(x[Indx[i]]/(((y[Indx[i]]^2) +(x[Indx[i]]^2))^0.5))-1.0;
+		q[Indx[i]]=(y[Indx[i]]/(((y[Indx[i]]^2) +(x[Indx[i]]^2))^0.5))-1.0;
+		for j=1:length(Indx)
+			J[Indx[i],Indx[j]]=A[Indx[i],Indx[j]].*q[Indx[i]];
+			if i==j
+				J[Indx[i],Indx[j]]=J[Indx[i],Indx[j]]+p[i]
+			end
+		end
+	end
+	#J[Indx,Indx].=Diagonal(p[Indx]).+A[Indx,Indx].*q[Indx];	
 	
 	if min(size(A,1),50)/2<30
 		restart=min(size(A,1),50)/2;  
@@ -185,9 +189,6 @@ while (iter <= max_iter )
 	#println("Into solver")
 	phiM.=.-phi;
 	
-		
-
-
 	##Solvers:
 	IterativeSolvers.gmres!(dx,Jsp,phiM,initially_zero=true,restart=restart,tol=1e-6);
 	#singleloopt=@elapsed IterativeSolvers.idrs!(dx,Jsp,phiM,s=16); #8 is good
@@ -195,9 +196,6 @@ while (iter <= max_iter )
 	#singleloopt=@elapsed FUNC
 	#totaltime=totaltime+singleloopt;
 	#println(totaltime)
-	
-	
-
 	
 	############################################
 
@@ -211,10 +209,6 @@ while (iter <= max_iter )
 		break;
 	end
 	
-
-
-
-	
 	#@info size(phiT) size(J)
 	# Test if we have dropped into a local minimia if so we are stuck
 	#nabla_phi = phiT*J;
@@ -226,8 +220,12 @@ while (iter <= max_iter )
 	
 	
 	#Reset J to zeros
-	J[Indx,Indx].=0.0; #fill!(J,0.0)
-	
+	#J[Indx,Indx].=0.0; #fill!(J,0.0)
+	for i=1:length(Indx)
+		for j=1:length(Indx)
+			J[Indx[i],Indx[j]]=0.0;
+		end
+	end
 
 	
 	# Test if our search direction is a 'sufficient' descent direction
@@ -239,9 +237,6 @@ while (iter <= max_iter )
 		#  dx = nabla_phi'
 		break;
 	end
-
-
-
 	
 	#--- Armijo backtracking combined with a projected line-search ---------
 	tau     = 1.0;                  # Current step length
