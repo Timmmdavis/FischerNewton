@@ -92,7 +92,8 @@ solver="zero";
 
 println("check all arrays below are used")
 # Init vars early on
-J = zeros(N,N); 
+J = zeros(N,N); #spzeros 
+zers=copy(J)
 old_err=err;
 #vectors
 y=zeros(N);
@@ -119,10 +120,10 @@ q=copy(y);
 x2=copy(y);
 y2=copy(y);
 
-tic=time()	
-toc=time()
-println("Elapsed time")
-println(toc-tic)	
+#tic=time()	
+#toc=time()
+#println("Elapsed time")
+#println(toc-tic)	
 
 while (iter <= max_iter )
     #println("Looping")
@@ -154,9 +155,6 @@ while (iter <= max_iter )
 	end
 	
 
-	
-
-	
 	#--- Solve the Newton system --------------------------------------------
 	#--- First we find the Jacobian matrix. We wish to avoid singular points
 	#--- in Jacobian of the Fischer function
@@ -165,10 +163,9 @@ while (iter <= max_iter )
 	
 	Indx=findall(I)
 
-	p[Indx].= (x[Indx]./(((y[Indx].^2) .+(x[Indx].^2)).^0.5)).-1.0;
-	q[Indx].= (y[Indx]./(((y[Indx].^2) .+(x[Indx].^2)).^0.5)).-1.0;
-	
-	J[Indx,Indx].=Diagonal(p[Indx]).+A[Indx,Indx].*q[Indx];
+	#@code_warntype
+	WorkOnJ(J,A,x,y,Indx)
+
 	
 	if min(size(A,1),50)/2<30
 		restart=min(size(A,1),50)/2;  
@@ -178,25 +175,25 @@ while (iter <= max_iter )
 	restart	= convert(Int64,restart)
 
 	#println("Creating sparse MAT")
-	Jsp=SparseArrays.sparse(J) 
+	Jsp=SparseArrays.sparse(J); 
+	#dropzeros!(Jsp)
 	#println("Sparse MAT created")
 	
 	dx.=dx.*0; #Reset Newton direction
+	
 	#println("Into solver")
 	phiM.=.-phi;
+	#@time phiM=sparsevec(phiM)
 	
-		
-
-
 	##Solvers:
 	IterativeSolvers.gmres!(dx,Jsp,phiM,initially_zero=true,restart=restart,tol=1e-6);
-	#singleloopt=@elapsed IterativeSolvers.idrs!(dx,Jsp,phiM,s=16); #8 is good
+	#singleloopt=@elapsed IterativeSolvers.idrs!(dx,Jsp,phiM,s=8); #8 is good
 	#singleloopt=@elapsed IterativeSolvers.bicgstabl!(dx,Jsp,phiM,10); #NOT CONSISTENT!!!!! errors every few runs with test
 	#singleloopt=@elapsed FUNC
 	#totaltime=totaltime+singleloopt;
 	#println(totaltime)
 	
-	
+	#tic=time()	
 
 	
 	############################################
@@ -211,10 +208,6 @@ while (iter <= max_iter )
 		break;
 	end
 	
-
-
-
-	
 	#@info size(phiT) size(J)
 	# Test if we have dropped into a local minimia if so we are stuck
 	#nabla_phi = phiT*J;
@@ -226,8 +219,12 @@ while (iter <= max_iter )
 	
 	
 	#Reset J to zeros
-	J[Indx,Indx].=0.0; #fill!(J,0.0)
-	
+	#J[Indx,Indx].=0.0; #fill!(J,0.0)
+	for i=eachindex(Indx)
+		 for j=eachindex(Indx)
+			 J[Indx[i],Indx[j]]=0.0;
+		 end
+	end
 
 	
 	# Test if our search direction is a 'sufficient' descent direction
@@ -239,9 +236,6 @@ while (iter <= max_iter )
 		#  dx = nabla_phi'
 		break;
 	end
-
-
-
 	
 	#--- Armijo backtracking combined with a projected line-search ---------
 	tau     = 1.0;                  # Current step length
@@ -283,6 +277,9 @@ while (iter <= max_iter )
 	# Increment the number of iterations
 	iter = iter + 1;	
 
+	#println("Elapsed time")
+	#toc=time()
+	#println(toc-tic)	
 	
 end #end of while lp2. 
 
@@ -311,7 +308,7 @@ function fischer!(y,x,phi)
 # Copyright 2011, Kenny Erleben
 
 for i=1:length(y)
-	phi[i]= (y[i]^2 + x[i].^2).^0.5 - y[i] - x[i];
+	phi[i]= (y[i]^2 + x[i]^2)^0.5 - y[i] - x[i];
 end
 
 return(phi)

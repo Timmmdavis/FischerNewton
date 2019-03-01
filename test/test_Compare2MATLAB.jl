@@ -1,11 +1,10 @@
 #Start creating vars for function: 
 println("creating func vars")
-
-
+using Profile
 
 #Inputs - Loading influence matricies
 using MAT
-file = matopen(raw"C:\Users\timmm\Desktop\FisherNewtonJulia\Matricies.mat")
+file = matopen(raw"C:\Users\Berlin\.julia\packages\FischerNewton\KsYi7\test\Matricies.mat")
 A=read(file, "A")
 b=read(file, "b")
 #MATLAB result
@@ -20,9 +19,8 @@ TdsMATLAB=read(file, "Tds")
 
 println("Vars loaded -> to fischerNewton func")
 
-#using Profile
 @time (x)=FischerNewton.fischer_newton(A,b);
-#poop
+poop
 #Profile.print(format=:flat)# (sortedby=:count)
 
 y = A*x+b;
