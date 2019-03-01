@@ -3,7 +3,6 @@
 #
 
 using Test 
-using TravisTest
 using FischerNewton
 
 fatalerrors = length(ARGS) > 0 && ARGS[1] == "-f"
