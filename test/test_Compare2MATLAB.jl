@@ -2,9 +2,23 @@
 println("creating func vars")
 using Profile
 
+G=pathof(FischerNewton);
+G=splitdir(G); #remove file name
+G=G[1];
+G=splitdir(G); #out of src
+G=G[1];
+
+if Sys.iswindows()
+    G=string(G,"\\test\\Matricies.mat")
+else
+	G=string(G,"/test/Matricies.mat")
+end
+
+
+println(G)
 #Inputs - Loading influence matricies
 using MAT
-file = matopen(raw"C:\Users\Berlin\.julia\packages\FischerNewton\KsYi7\test\Matricies.mat")
+file = matopen(G)
 A=read(file, "A")
 b=read(file, "b")
 #MATLAB result
@@ -20,7 +34,6 @@ TdsMATLAB=read(file, "Tds")
 println("Vars loaded -> to fischerNewton func")
 
 @time (x)=FischerNewton.fischer_newton(A,b);
-poop
 #Profile.print(format=:flat)# (sortedby=:count)
 
 y = A*x+b;
