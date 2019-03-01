@@ -84,6 +84,19 @@ git-tree-sha1 = "49269e311ffe11ac5b334681d212329002a9832a"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
 version = "1.5.1"
 
+[[Homebrew]]
+deps = ["BinDeps", "InteractiveUtils", "JSON", "Libdl", "Test", "Unicode"]
+git-tree-sha1 = "f01fb2f34675f9839d55ba7238bab63ebd2e531e"
+uuid = "d9be37ee-ecc9-5288-90f1-b9ca67657a75"
+version = "0.7.1"
+
+[[JSON]]
+deps = ["Dates", "Distributed", "Mmap", "Sockets", "Test", "Unicode"]
+git-tree-sha1 = "1f7a25b53ec67f5e9422f1f551ee216503f4a0fa"
+uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+version = "0.20.0"
+
+
 [[Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
