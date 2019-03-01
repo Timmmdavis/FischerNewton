@@ -224,7 +224,7 @@ while (iter <= max_iter )
 		 for j=eachindex(Indx)
 			 J[Indx[i],Indx[j]]=0.0;
 		 end
-
+	end
 
 	
 	# Test if our search direction is a 'sufficient' descent direction
