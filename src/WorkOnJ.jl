@@ -12,7 +12,7 @@ function WorkOnJ(J,A::Array{Float64,2},x::Array{Float64},y::Array{Float64},I)
 		q=(y[idxi]./cons)-1.0;
 		for j=eachindex(Indx)
 			local idxj=Indx[j];
-			J[idxi,idxj]=A[idxi,idxj].*q;
+			J[idxi,idxj]=A[idxi,idxj]*q;
 		end
 		J[idxi,idxi] +=p; #can use J[CartesianIndex(idxi,idxi)]
 	end

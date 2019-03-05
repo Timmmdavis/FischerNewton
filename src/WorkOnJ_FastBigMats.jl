@@ -29,9 +29,13 @@ function WorkOnJ_FastBigMats(A,x,y,Flag,II,JJ,ISml,JSml,VSml)
 		for j=1:length(Indx)
 			local idxj=Indx[j];		
 			if idxi==idxj
+				if p==0 && A[idxi,idxj]==0
+					continue
+				end
 				push!(VSml,(A[idxi,idxj]*q)+p)
 				push!(ISml,idxi)
 				push!(JSml,idxj)
+
 				#counter+=1;				
 				#VSml[counter]=A[idxi,idxj]*q+p;
 				#ISml[counter]=idxi;

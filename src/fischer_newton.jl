@@ -142,8 +142,9 @@ while (iter <= max_iter )
 	I.= (S.==false);        
 		
 	#Function that creates sparse MAT J	
-	J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)
-	#J=WorkOnJ(J,A,x,y,I)
+
+	#J1=WorkOnJ(J,A,x,y,I)
+	J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
 	#singleloopt=@elapsed 
 	#totaltime=totaltime+singleloopt;
 	#println(totaltime)	
@@ -151,10 +152,10 @@ while (iter <= max_iter )
 	#If you want to compare the outputs of the methods above:
 	 # (I1,J1,V1)=findnz(J1);
 	 # (I2,J2,V2)=findnz(J2);
-	 # if !isequal(V1,V2)
-		 # @info size(V1) size(V2)
-		 # error("Not eq")
-	 # end	
+	  # if !isequal(V1,V2)
+		  # @info size(V1) size(V2)
+		  # error("Not eq")
+	  # end	
 	
 	if min(size(A,1),50)/2<30
 		restart=min(size(A,1),50)/2;  
@@ -167,14 +168,15 @@ while (iter <= max_iter )
 	phiM.=.-phi;
 	
 	println("Into solver")
+	singleloopt=@elapsed IterativeSolvers.gmres!(dx,J,phiM,tol=1e-6,restart=restart, initially_zero=true,maxiter=10);
+	totaltime=totaltime+singleloopt;
+	println(totaltime)
 	
-	singleloopt=@elapsed IterativeSolvers.gmres!(dx,J,phiM,tol=1e-1, initially_zero=true,maxiter=10);
 	#IterativeSolvers.idrs!(dx,Jsp,phiM,s=8); #8 is good
 	#IncompleteLU.LU = ilu(J, τ = 0.1);
 	#IterativeSolvers.bicgstabl!(dx,J,phiM,2,Pl = LU); #not good. 
 	#singleloopt=@elapsed FUNC
-	#totaltime=totaltime+singleloopt;
-	#println(totaltime)
+
 	
 	# Test if the search direction is smaller than numerical precision. 
 	# That is if it is too close to zero.
