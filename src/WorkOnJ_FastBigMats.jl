@@ -1,4 +1,4 @@
-function WorkOnJ_FastBigMats(A,x,y,Flag,II,JJ,ISml,JSml,VSml)
+function WorkOnJ_FastBigMats(A,x,y,Flag,II,JJ) #,ISml,JSml,VSml
 #A - inf mat
 #xy - vectors
 #Flag - bool vectors

@@ -41,18 +41,18 @@ y = A*x+b;
 
 println("Out of func")
 
-@info typeof(x[:]) 
-@info size(x[:])
-@info size(xMATLAB[:])
-@info x[1:10] xMATLAB[1:10]
-@info x[end-10:end] xMATLAB[end-10:end]
-@info y[end-10:end] yMATLAB[end-10:end]
+#@info typeof(x[:]) 
+#@info size(x[:])
+#@info size(xMATLAB[:])
+#@info x[1:10] xMATLAB[1:10]
+#@info x[end-10:end] xMATLAB[end-10:end]
+#@info y[end-10:end] yMATLAB[end-10:end]
 
 (xRes)=FischerNewton.CompResiduals(x,xMATLAB);
 (yRes)=FischerNewton.CompResiduals(y,yMATLAB);
-println("Values of residuals")
-@info xRes 
-@info yRes
+#println("Values of residuals")
+#@info xRes 
+#@info yRes
 
 
 # Creating some lengths we can use for extraction of sub matricies/vectors
@@ -121,6 +121,3 @@ end
 if TdsRes>1E-6
 	error("Residual too high")
 end
-
-println("MaxDn")
-@info maximum(Dn)

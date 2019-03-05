@@ -86,7 +86,8 @@ dx=copy(y);
 S=copy(y);
 y_k=copy(y);
 nabla_phi=similar(phiT);
-totaltime=0.;
+totaltime1=0.;
+totaltime2=0.;
 test=[0.0];
 grad_f=[0.0];
 I=zeros(Int64, N)
@@ -101,10 +102,9 @@ ASpc=sparse(A);
 ASpcbad=findall(iszero, ASpc);
 II[ASpcbad].=0;
 JJ[ASpcbad].=0; #Bad bits are zero (drop later)
-
-ISml=zeros(N^2);
-JSml=zeros(N^2);
-VSml=zeros(N^2);
+#ISml=zeros(N^2);
+#JSml=zeros(N^2);
+#VSml=zeros(N^2);
 
 #tic=time()	
 #toc=time()
@@ -115,12 +115,14 @@ Indx=0;
 while (iter <= max_iter )
     #println("Looping")
 	
+	
 	#y = A*x (pre allocated y)
 	mul!(y,A,x) 
 	y.=y.+b
 	
 	#--- Test all stopping criteria used ------------------------------------
 	phi = phi_lambda!(y, x, lambda,phi,phi_l);         # Calculate fischer function
+	
 	old_err = err;
 	for i=1:length(phi); phiT[i]=phi[i]; end #transpose
 	err     = 0.5*dot(phiT,phi);       # Natural merit function
@@ -141,13 +143,14 @@ while (iter <= max_iter )
 	S.= (abs.(phi).<gamma) .& (abs.(x).<gamma);  # Bitmask for singular indices
 	I.= (S.==false);        
 		
-	#Function that creates sparse MAT J	
 
+		
+	#Function that creates sparse MAT J	
 	#J1=WorkOnJ(J,A,x,y,I)
-	J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
-	#singleloopt=@elapsed 
-	#totaltime=totaltime+singleloopt;
-	#println(totaltime)	
+	println("Precompute J total time")
+	singleloopt=@elapsed J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ)	
+	totaltime1=totaltime1+singleloopt;
+	println(totaltime1)
 	
 	#If you want to compare the outputs of the methods above:
 	 # (I1,J1,V1)=findnz(J1);
@@ -167,16 +170,23 @@ while (iter <= max_iter )
 	dx.=dx.*0; #Reset Newton direction
 	phiM.=.-phi;
 	
-	println("Into solver")
-	singleloopt=@elapsed IterativeSolvers.gmres!(dx,J,phiM,tol=1e-6,restart=restart, initially_zero=true,maxiter=10);
-	totaltime=totaltime+singleloopt;
-	println(totaltime)
+	dxSubset=dx[I];
+	JSubset=J[I,I];
+	phiMSubset=phiM[I]
+	
+	println("Total elapsed solver time")
+	singleloopt=@elapsed IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10);
+	totaltime2=totaltime2+singleloopt;
+	println(totaltime2)
+	
+	dx[I]=dxSubset;
 	
 	#IterativeSolvers.idrs!(dx,Jsp,phiM,s=8); #8 is good
 	#IncompleteLU.LU = ilu(J, τ = 0.1);
 	#IterativeSolvers.bicgstabl!(dx,J,phiM,2,Pl = LU); #not good. 
 	#singleloopt=@elapsed FUNC
 
+	
 	
 	# Test if the search direction is smaller than numerical precision. 
 	# That is if it is too close to zero.
@@ -196,8 +206,8 @@ while (iter <= max_iter )
 		flag = 6;
 		break;
 	end
-
 	
+
 	# Test if our search direction is a 'sufficient' descent direction
 	nabdx=nabla_phi*dx
 	if  nabdx[1]  > -rho*dot(dx',dx)
@@ -208,32 +218,35 @@ while (iter <= max_iter )
 		break;
 	end
 	
+
+	
 	#--- Armijo backtracking combined with a projected line-search ---------
 	tau     = 1.0;                  # Current step length
 	f_0     = err;
 	grad_f= beta*dot(nabla_phi,dx);
 	x_k     = x;
-
-	
+		
 	while true #Inf loop, escapes when a break is performed
 		x_k.=max.(0.0,x.+dx.*tau) #x_k   = max.(0.0,x + dx*tau); #non negativity
 		#y_k   = A*x_k + b; (pre allocated y_k)
 		mul!(y_k,A,x_k) 
 		y_k.=y_k.+b
 		phi_k = phi_lambda!( y_k, x_k, lambda,phi_k,phi_l );	
+		
 		for i=1:length(phi_k); phi_kT[i]=phi[i]; end #transpose
 		f_k = 0.5*dot(phi_kT,phi_k);       # Natural merit function
 
+		
 		# Perform Armijo codition to see if we got a sufficient decrease
 		test=f_0.+ tau*grad_f;
-		if ( f_k[1] <= test[1])
+		if ( f_k <= test)
 			break;
 		end
 
 		# Test if time-step became too small
 		if tau*tau < gamma
 			break;
-		end
+		end	
 
 		tau = alpha*tau;
 	end #end of while lp 1. 
@@ -245,10 +258,6 @@ while (iter <= max_iter )
 	# Increment the number of iterations
 	iter = iter + 1;	
 
-	#println("Elapsed time")
-	#toc=time()
-	#println(toc-tic)	
-	
 end #end of while lp2. 
 
 
