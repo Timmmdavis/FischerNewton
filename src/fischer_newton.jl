@@ -30,20 +30,6 @@ function fischer_newton(A,b)
 #    distribution.
 ##
 
-# #Speedup
-# if (~issparse(A))
-    # #If not sparse they might be single, this func is not going to work if so.
-    # if (isa(A,"single"))
-        # A=double(A);
-    # end
-    # if (isa(b,"single"))
-        # b=double(b);
-    # end
-  # A = sparse(A);	# Make sure M is sparse
-# end
-# b = full(b(:)); 	# Make sure q is a column vector
-
-
 if length(size(b))>1
 	println("b should not have two dimensions, reshaping for you...")
 	b=reshape(b,length(b));
@@ -57,12 +43,6 @@ x = zeros(N);
 max_iter = floor(N/2);
 tol_rel = 0.0001;
 tol_abs = 10*eps(); # Order of 10th of numerical precision seems okay
-solver = "random"; #Gets switched to zero lower down...
-profile = false;
-#switch lower(solver)
-#	case "penalized"
-#		lambda = 0.95;
-#	otherwise
 lambda = 1.00; # No support for penalization in other solvers
 
 #--- Make sure all values are valid ---------------------------------------
@@ -93,7 +73,6 @@ solver="zero";
 println("check all arrays below are used")
 # Init vars early on
 J = zeros(N,N); #spzeros 
-zers=copy(J)
 old_err=err;
 #vectors
 y=zeros(N);
@@ -107,24 +86,32 @@ dx=copy(y);
 S=copy(y);
 y_k=copy(y);
 nabla_phi=similar(phiT);
-dx=zeros(N);
 totaltime=0.;
-S=copy(dx);
-phi=copy(dx);
 test=[0.0];
 grad_f=[0.0];
 I=zeros(Int64, N)
 I=convert(Array{Bool,1},I) #convert to bool
-p=copy(y);
-q=copy(y);
-x2=copy(y);
-y2=copy(y);
+
+Steps = 1:1:N::Int64
+II=repeat(Steps,1,N);
+JJ=transpose(II);
+
+ASpc=sparse(A);
+(AI,AJ,AV)=findnz(ASpc);
+ASpcbad=findall(iszero, ASpc);
+II[ASpcbad].=0;
+JJ[ASpcbad].=0; #Bad bits are zero (drop later)
+
+ISml=zeros(N^2);
+JSml=zeros(N^2);
+VSml=zeros(N^2);
 
 #tic=time()	
 #toc=time()
 #println("Elapsed time")
-#println(toc-tic)	
-
+#println(toc-tic)
+	
+Indx=0;
 while (iter <= max_iter )
     #println("Looping")
 	
@@ -132,18 +119,12 @@ while (iter <= max_iter )
 	mul!(y,A,x) 
 	y.=y.+b
 	
-
-	
 	#--- Test all stopping criteria used ------------------------------------
-	phi     = phi_lambda!(y, x, lambda,phi,phi_l);         # Calculate fischer function
+	phi = phi_lambda!(y, x, lambda,phi,phi_l);         # Calculate fischer function
 	old_err = err;
 	for i=1:length(phi); phiT[i]=phi[i]; end #transpose
 	err     = 0.5*dot(phiT,phi);       # Natural merit function
 	err=err[1]; #extract
-	
-	if profile
-		convergence = [convergence err];
-	end
 	
 	if (abs(err-old_err) / abs(old_err)) < tol_rel  # Relative stopping criteria
 		flag = 3;
@@ -153,19 +134,27 @@ while (iter <= max_iter )
 		flag = 4;
 		break;
 	end
-	
 
 	#--- Solve the Newton system --------------------------------------------
 	#--- First we find the Jacobian matrix. We wish to avoid singular points
 	#--- in Jacobian of the Fischer function
 	S.= (abs.(phi).<gamma) .& (abs.(x).<gamma);  # Bitmask for singular indices
-	I.= (S.==false);                     		# Bitmask for non-singular indices
+	I.= (S.==false);        
+		
+	#Function that creates sparse MAT J	
+	J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)
+	#J=WorkOnJ(J,A,x,y,I)
+	#singleloopt=@elapsed 
+	#totaltime=totaltime+singleloopt;
+	#println(totaltime)	
 	
-	Indx=findall(I)
-
-	#@code_warntype
-	WorkOnJ(J,A,x,y,Indx)
-
+	#If you want to compare the outputs of the methods above:
+	 # (I1,J1,V1)=findnz(J1);
+	 # (I2,J2,V2)=findnz(J2);
+	 # if !isequal(V1,V2)
+		 # @info size(V1) size(V2)
+		 # error("Not eq")
+	 # end	
 	
 	if min(size(A,1),50)/2<30
 		restart=min(size(A,1),50)/2;  
@@ -174,30 +163,19 @@ while (iter <= max_iter )
 	end  
 	restart	= convert(Int64,restart)
 
-	#println("Creating sparse MAT")
-	Jsp=SparseArrays.sparse(J); 
-	#dropzeros!(Jsp)
-	#println("Sparse MAT created")
-	
 	dx.=dx.*0; #Reset Newton direction
-	
-	#println("Into solver")
 	phiM.=.-phi;
-	#@time phiM=sparsevec(phiM)
 	
-	##Solvers:
-	IterativeSolvers.gmres!(dx,Jsp,phiM,initially_zero=true,restart=restart,tol=1e-6);
-	#singleloopt=@elapsed IterativeSolvers.idrs!(dx,Jsp,phiM,s=8); #8 is good
-	#singleloopt=@elapsed IterativeSolvers.bicgstabl!(dx,Jsp,phiM,10); #NOT CONSISTENT!!!!! errors every few runs with test
+	println("Into solver")
+	
+	singleloopt=@elapsed IterativeSolvers.gmres!(dx,J,phiM,tol=1e-1, initially_zero=true,maxiter=10);
+	#IterativeSolvers.idrs!(dx,Jsp,phiM,s=8); #8 is good
+	#IncompleteLU.LU = ilu(J, τ = 0.1);
+	#IterativeSolvers.bicgstabl!(dx,J,phiM,2,Pl = LU); #not good. 
 	#singleloopt=@elapsed FUNC
 	#totaltime=totaltime+singleloopt;
 	#println(totaltime)
 	
-
-	#tic=time()	
-
-	############################################
-
 	# Test if the search direction is smaller than numerical precision. 
 	# That is if it is too close to zero.
 	if maximum(abs.(dx)) < eps()
@@ -215,15 +193,6 @@ while (iter <= max_iter )
 	if norm(nabla_phi) < tol_abs
 		flag = 6;
 		break;
-	end
-	
-	
-	#Reset J to zeros
-	#J[Indx,Indx].=0.0; #fill!(J,0.0)
-	for i=eachindex(Indx)
-		 for j=eachindex(Indx)
-			 J[Indx[i],Indx[j]]=0.0;
-		 end
 	end
 
 	
@@ -266,9 +235,6 @@ while (iter <= max_iter )
 
 		tau = alpha*tau;
 	end #end of while lp 1. 
-
-	
-
 
 	
 	# Update iterate with result from Armijo backtracking

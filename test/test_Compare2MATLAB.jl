@@ -33,6 +33,7 @@ TdsMATLAB=read(file, "Tds")
 
 println("Vars loaded -> to fischerNewton func")
 
+#@time (x)=FischerNewton.fischer_newton_WorkingSameSpeedMATLAB(A,b);
 @time (x)=FischerNewton.fischer_newton(A,b);
 #Profile.print(format=:flat)# (sortedby=:count)
 

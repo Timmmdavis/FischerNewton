@@ -11,4 +11,6 @@ using InteractiveUtils
 include("fischer_newton.jl")
 include("CompResiduals.jl")
 include("WorkOnJ.jl")
+include("WorkOnJ_FastBigMats.jl")
+
 end

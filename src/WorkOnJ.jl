@@ -1,25 +1,9 @@
-function WorkOnJ(J,A::Array{Float64,2},x::Array{Float64},y::Array{Float64},Indx)
-
-
-
-	# for i=1:length(Indx)
-		# local idxi=Indx[i];
-		# cons=(((y[idxi]^2) +(x[idxi]^2))^0.5);
-		# p[idxi]=(x[idxi]./cons)-1.0;
-		# q[idxi]=(y[idxi]./cons)-1.0;
-		# for j=1:length(Indx)
-			# local idxj=Indx[j];
-			# J[idxi,idxj]=A[idxi,idxj].*q[idxi];
-		# end
-	# end
-	# # #and add p to diagonal
-	# # for i=1:length(Indx)
-		# # local idxi=Indx[i];
-		# # J[idxi,idxi] +=p[i];
-	# # end
+function WorkOnJ(J,A::Array{Float64,2},x::Array{Float64},y::Array{Float64},I)
 	
-	# #J[Indx,Indx].=A[Indx,Indx].*q[Indx];
-	# J[Indx,Indx]=J[Indx,Indx]+Diagonal(p[Indx])
+	Indx=findall(I)
+	fill!(J, 0.0)
+	#println("Resetting for saftey")
+	#J=zeros(size(J));
 	
 	for i=eachindex(Indx)
 		local idxi=Indx[i];
@@ -32,5 +16,7 @@ function WorkOnJ(J,A::Array{Float64,2},x::Array{Float64},y::Array{Float64},Indx)
 		end
 		J[idxi,idxi] +=p; #can use J[CartesianIndex(idxi,idxi)]
 	end
-
+	J=SparseArrays.sparse(J); 
+	return(J)
+	
 end
