@@ -50,13 +50,15 @@ xyJulia=LinearAlgebra.dot(x,y)
 println("sum(x.*y) Julia result")
 @info xyJulia
 if abs(xyJulia)>abs(xyMatlab)
-	printstyled("Julia is not as good as MATLAB at meeting condition \n",color=:light_red)
+	printstyled("Julia is not as good as MATLAB at meeting comp conditions \n",color=:light_red)
+else
+	printstyled("Julia better than MATLAB at meeting comp conditions \n",color=:green)
 end
 
 #y>0
 if any(y.<0)
 	maxneg=maximum(y[y.<0])
-	if abs(maxneg)>1e-8 #some tolerance allowed
+	if abs(maxneg)>1e-14 #some tolerance allowed
 	@info maxneg
 		error("negative y values")
 	end
@@ -65,7 +67,7 @@ end
 if any(x.<0)
 	maxneg=maximum(x[x.<0])
 	@info maxneg
-	if abs(maxneg)>1e-8 #some tolerance allowed
+	if abs(maxneg)>1e-14 #some tolerance allowed
 		error("negative x values")
 	end
 	
@@ -145,7 +147,7 @@ end
 if DdsRes>1E-5
 	error("Residual Dds too high")
 end
-if TnRes>2E-5
+if TnRes>1E-5
 	error("Residual Tn too high")
 end
 if TssRes>1E-5

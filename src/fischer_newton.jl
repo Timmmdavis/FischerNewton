@@ -90,6 +90,8 @@ totaltime1=0.;
 totaltime2=0.;
 test=[0.0];
 grad_f=[0.0];
+f_k=[0.0]
+tau=0.0;
 I=zeros(Int64, N)
 I=convert(Array{Bool,1},I) #convert to bool
 
@@ -102,15 +104,13 @@ ASpc=sparse(A);
 ASpcbad=findall(iszero, ASpc);
 II[ASpcbad].=0;
 JJ[ASpcbad].=0; #Bad bits are zero (drop later)
-#ISml=zeros(N^2);
-#JSml=zeros(N^2);
-#VSml=zeros(N^2);
+
 
 #tic=time()	
 #toc=time()
 #println("Elapsed time")
 #println(toc-tic)
-global dxSubset
+
 
 Indx=0;
 while (iter <= max_iter )
@@ -120,17 +120,18 @@ while (iter <= max_iter )
 	
 	#y = A*x (pre allocated y)
 	mul!(y,A,x) 
-	y.=y.+b
+	y=y+b
 	
+
 	#--- Test all stopping criteria used ------------------------------------
 	phi = phi_lambda!(y, x, lambda,phi,phi_l);         # Calculate fischer function
+	#phi=phi_lambda(y, x,lambda)
 	
 	old_err = err;
 	for i=1:length(phi); phiT[i]=phi[i]; end #transpose
 	err     = 0.5*(phiT*phi);       # Natural merit function
 	err=err[1]
-	#@info err old_err
-	@info (abs(err-old_err) / abs(old_err))
+
 	if (abs(err-old_err) / abs(old_err)) < tol_rel  # Relative stopping criteria
 		flag = 3;
 		break;
@@ -143,17 +144,18 @@ while (iter <= max_iter )
 	#--- Solve the Newton system --------------------------------------------
 	#--- First we find the Jacobian matrix. We wish to avoid singular points
 	#--- in Jacobian of the Fischer function
-	S.= (abs.(phi).<gamma) .& (abs.(x).<gamma);  # Bitmask for singular indices
-	I.= (S.==false);        
+	S= (abs.(phi).<gamma) .& (abs.(x).<gamma);  # Bitmask for singular indices
+	I= (S.==false);        
 		
 
-		
 	#Function that creates sparse MAT J	
 	#J1=WorkOnJ(J,A,x,y,I)
 	println("Precompute J total time")
 	singleloopJ=@elapsed J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ)	
 	totaltime1=totaltime1+singleloopJ;
 	println(totaltime1)
+	
+
 	
 	#If you want to compare the outputs of the methods above:
 	 # (I1,J1,V1)=findnz(J1);
@@ -170,30 +172,36 @@ while (iter <= max_iter )
 	end  
 	restart	= convert(Int64,restart)
 	
-	dx.=dx.*0; #Reset Newton direction
-	phiM.=.-phi;
+	dx=dx.*0; #Reset Newton direction
+	phiM=-phi;	
+				
 	
 	dxSubset=dx[I];
 	JSubset=J[I,I];
 	phiMSubset=phiM[I]
+	#dxSubset=view(dx,I);
+	#JSubset=view(J,I,I);
+	#phiMSubset=view(phiM,I);
+
 	
 	println("Total elapsed solver time")
 	###1 IterativeSolvers
-	#IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10);
+	IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
 	
-	###2 KrylovKit
+	####2 KrylovKit
 	#alg = GMRES( krylovdim = restart, maxiter = 5, tol = 1e-6)
 	#singleloopS=@elapsed dxSubset, info = @inferred linsolve(JSubset,phiMSubset,dxSubset, alg)
 	
 	###3 Krylov.jl.git#gmres
+	##DEFINE OUT OF LOOP global dxSubset
 	#for i = 1 : restart	
 	#	(dxSubset,stats) = Krylov.gmres(JSubset, phiMSubset, rtol=1e-6, x0=dxSubset, itmax=10)
 	#end
 	
 	###4 Krylov DqGmres
 	#Some parameters atol::Float64=1.0e-8 rtol::Float64=1.0e-6 itmax::Int=0
-	dqgmres_tol = 1.0e-6
-	(dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,atol=dqgmres_tol,itmax=restart)
+	#dqgmres_tol = 1.0e-6
+	#(dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,atol=dqgmres_tol,itmax=restart)
 	
 	#singleloopS=@elapsed
 	#totaltime2=totaltime2+singleloopS;
@@ -223,7 +231,7 @@ while (iter <= max_iter )
 
 	# Test if our search direction is a 'sufficient' descent direction
 	nabdx=nabla_phi*dx
-	if  nabdx[1]  > -rho*dot(dx',dx)
+	if  nabdx[1]  > -rho*(dx'*dx)
 		flag = 7;
 		# Rather than just giving up we may just use the gradient direction
 		# instead. However, I am lazy here!
@@ -234,36 +242,39 @@ while (iter <= max_iter )
 
 	
 	#--- Armijo backtracking combined with a projected line-search ---------
-	tau     = 1.0;                  # Current step length
+	tau= 1.0;                  # Current step length
 	f_0     = err;
 	grad_f= beta*dot(nabla_phi,dx);
 	x_k     = x;
-		
+	
+
 	while true #Inf loop, escapes when a break is performed
-		x_k.=max.(0.0,x.+dx.*tau) #x_k   = max.(0.0,x + dx*tau); #non negativity
+
+		x_k=max.(0.0,x.+dx.*tau) #x_k   = max.(0.0,x + dx*tau); #non negativity
 		#y_k   = A*x_k + b; (pre allocated y_k)
 		mul!(y_k,A,x_k) 
-		y_k.=y_k.+b
-		phi_k = phi_lambda!( y_k, x_k, lambda,phi_k,phi_l );	
+		y_k=y_k+b
+		phi_k=phi_lambda!( y_k, x_k, lambda,phi_k,phi_l );	
+		#phi_k=phi_lambda( y_k, x_k, lambda );	
 		
-		for i=1:length(phi_k); phi_kT[i]=phi[i]; end #transpose
-		f_k = 0.5*dot(phi_kT,phi_k);       # Natural merit function
+		for i=1:length(phi_k); phi_kT[i]=phi_k[i]; end #transpose
+		f_k= 0.5*dot(phi_kT,phi_k);       # Natural merit function
 
 		
 		# Perform Armijo codition to see if we got a sufficient decrease
-		test=f_0.+ tau*grad_f;
+		test=f_0+ tau*grad_f;
 		if ( f_k <= test)
 			break;
 		end
 
 		# Test if time-step became too small
-		if tau*tau < gamma
+		if tau*tau < gamma	
 			break;
 		end	
-
-		tau = alpha*tau;
+		
+		tau= alpha*tau;
+		
 	end #end of while lp 1. 
-
 	
 	# Update iterate with result from Armijo backtracking
 	x.= x_k;
