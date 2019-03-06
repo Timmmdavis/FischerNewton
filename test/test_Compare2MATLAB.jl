@@ -1,5 +1,5 @@
 #Start creating vars for function: 
-println("creating func vars")
+printstyled("creating func vars \n",color=:cyan)
 using Profile
 
 G=pathof(FischerNewton);
@@ -31,15 +31,48 @@ TnMATLAB=read(file, "Tn")
 TssMATLAB=read(file, "Tss")
 TdsMATLAB=read(file, "Tds")
 
-println("Vars loaded -> to fischerNewton func")
-
-#@time (x)=FischerNewton.fischer_newton_WorkingSameSpeedMATLAB(A,b);
+printstyled("Vars loaded -> to fischerNewton func \n",color=:cyan)
 @time (x)=FischerNewton.fischer_newton(A,b);
 #Profile.print(format=:flat)# (sortedby=:count)
 
+printstyled("Out of func \n",color=:cyan)
+
 y = A*x+b;
 
-println("Out of func")
+printstyled("Checking complimentarity conditions are met \n",color=:cyan)
+
+#X*Y=0 
+using LinearAlgebra
+xyMatlab=LinearAlgebra.dot(xMATLAB,yMATLAB)
+println("sum(x.*y) MATLAB result")
+@info xyMatlab
+xyJulia=LinearAlgebra.dot(x,y)
+println("sum(x.*y) Julia result")
+@info xyJulia
+if abs(xyJulia)>abs(xyMatlab)
+	printstyled("Julia is not as good as MATLAB at meeting condition \n",color=:light_red)
+end
+
+#y>0
+if any(y.<0)
+	maxneg=maximum(y[y.<0])
+	if abs(maxneg)>1e-8 #some tolerance allowed
+	@info maxneg
+		error("negative y values")
+	end
+end
+#x>0
+if any(x.<0)
+	maxneg=maximum(x[x.<0])
+	@info maxneg
+	if abs(maxneg)>1e-8 #some tolerance allowed
+		error("negative x values")
+	end
+	
+end
+
+printstyled("Complimentarity conditions are met \n",color=:light_green)
+printstyled("Checking residuals relative to MATLAB's result \n",color=:cyan)
 
 #@info typeof(x[:]) 
 #@info size(x[:])
@@ -103,21 +136,22 @@ println("Values of residuals (Traction)")
 @info TssRes
 @info TdsRes
 
-if DnRes>1E-6
-	error("Residual too high")
+if DnRes>1E-5
+	error("Residual Dn too high")
 end
-if DssRes>1E-6
-	error("Residual too high")
+if DssRes>1E-5
+	error("Residual Dss too high")
 end
-if DdsRes>1E-6
-	error("Residual too high")
+if DdsRes>1E-5
+	error("Residual Dds too high")
 end
-if TnRes>1E-6
-	error("Residual too high")
+if TnRes>2E-5
+	error("Residual Tn too high")
 end
-if TssRes>1E-6
-	error("Residual too high")
+if TssRes>1E-5
+	error("Residual Tss too high")
 end
-if TdsRes>1E-6
-	error("Residual too high")
+if TdsRes>1E-5
+	error("Residual Tds too high")
 end
+printstyled("Residuals appear OK (according to the arbitary limits set) \n",color=:light_green)

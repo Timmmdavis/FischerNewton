@@ -1,10 +1,36 @@
 # This file is machine-generated - editing it directly is not advised
 
+[[KrylovKit]]
+deps = ["LinearAlgebra", "Printf", "Random", "Test"]
+git-tree-sha1 = "5cc4ab9a310f1ce62e74e72f66884baa3faa4d1b"
+uuid = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
+version = "0.3.3"
+
 [[IterativeSolvers]]
 deps = ["LinearAlgebra", "Printf", "Random", "RecipesBase", "SparseArrays", "Test"]
 git-tree-sha1 = "5687f68018b4f14c0da54d402bb23eecaec17f37"
 uuid = "42fd0dbc-a981-5370-80f2-aaf504508153"
 version = "0.8.1"
+
+[[Krylov]]
+deps = ["LinearAlgebra", "LinearOperators", "Printf", "Random", "SparseArrays", "Test"]
+git-tree-sha1 = "5ce078f70817bb778909329ac79663a5bb287625"
+repo-rev = "gmres"
+repo-url = "https://github.com/amontoison/Krylov.jl.git"
+uuid = "ba0b0d4f-ebba-5204-a429-3ac8c609bfb7"
+version = "0.2.0+"
+
+[[LinearOperators]]
+deps = ["FastClosures", "LinearAlgebra", "Printf", "SparseArrays", "Test"]
+git-tree-sha1 = "def8f0b57bcde3e54ac073f2456ddd978b323e96"
+uuid = "5c8ed15e-5a4c-59e4-a42b-c7e8811fb125"
+version = "0.5.3"
+
+[[FastClosures]]
+deps = ["Compat"]
+git-tree-sha1 = "9769222f4f0702d063a54e5f53000e8f219e4e7d"
+uuid = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
+version = "0.2.1"
 
 [[LinearAlgebra]]
 deps = ["Libdl"]
