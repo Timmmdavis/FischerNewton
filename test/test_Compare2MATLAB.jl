@@ -58,7 +58,7 @@ end
 #y>0
 if any(y.<0)
 	maxneg=maximum(y[y.<0])
-	if abs(maxneg)>1e-14 #some tolerance allowed
+	if abs(maxneg)>1e-10 #some tolerance allowed
 	@info maxneg
 		error("negative y values")
 	end
@@ -67,7 +67,7 @@ end
 if any(x.<0)
 	maxneg=maximum(x[x.<0])
 	@info maxneg
-	if abs(maxneg)>1e-14 #some tolerance allowed
+	if abs(maxneg)>1e-10 #some tolerance allowed
 		error("negative x values")
 	end
 	

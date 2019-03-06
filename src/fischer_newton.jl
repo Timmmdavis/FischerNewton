@@ -93,7 +93,7 @@ f_k=[0.0]
 tau=0.0;
 I=zeros(Int64, N)
 I=convert(Array{Bool,1},I) #convert to bool
-
+J = zeros(N,N); #spzeros
 Steps = 1:1:N::Int64
 II=repeat(Steps,1,N);
 JJ=transpose(II);
@@ -151,12 +151,11 @@ while (iter <= max_iter )
 	S= (abs.(phi).<gamma) .& (abs.(x).<gamma);  # Bitmask for singular indices
 	I= (S.==false);        
 
-
 	
 	#Function that creates sparse MAT J	
-	#J1=WorkOnJ(J,A,x,y,I)
+	singleloopJ=@elapsed J=WorkOnJ(J,A,x,y,I,II)
 	println("Precompute J total time")
-	singleloopJ=@elapsed J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
+	#singleloopJ=@elapsed J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
 	totaltime1=totaltime1+singleloopJ;
 	println(totaltime1)
 		
@@ -190,7 +189,7 @@ while (iter <= max_iter )
 	
 	println("Total elapsed solver time") # Current setups of solvers 1 and 4 give very simular (good) results!
 	###1 IterativeSolvers
-	singleloopS=@elapsed IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
+	#singleloopS=@elapsed IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
 	
 	####2 KrylovKit
 	#alg = GMRES( krylovdim = restart, maxiter = 5, tol = 1e-6)
@@ -204,8 +203,8 @@ while (iter <= max_iter )
 	
 	###4 Krylov DqGmres
 	##Some parameters atol::Float64=1.0e-8 rtol::Float64=1.0e-6 itmax::Int=0
-	#dqgmres_tol = 1.0e-6
-	#singleloopS=@elapsed (dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,memory=restart,itmax =10*restart,rtol =dqgmres_tol)
+	dqgmres_tol = 1.0e-6
+	singleloopS=@elapsed (dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,memory=restart,itmax =10*restart,rtol =dqgmres_tol)
 	
 	#singleloopS=@elapsed
 	totaltime2=totaltime2+singleloopS;
