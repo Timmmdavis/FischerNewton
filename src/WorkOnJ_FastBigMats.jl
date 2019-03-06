@@ -1,4 +1,4 @@
-function WorkOnJ_FastBigMats(A,x,y,Flag,II,JJ) #,ISml,JSml,VSml
+function WorkOnJ_FastBigMats(A,x,y,Flag,II,JJ,ISml,JSml,VSml) #,ISml,JSml,VSml
 #A - inf mat
 #xy - vectors
 #Flag - bool vectors
@@ -10,12 +10,13 @@ function WorkOnJ_FastBigMats(A,x,y,Flag,II,JJ) #,ISml,JSml,VSml
 	I=view(II,Indx,Indx);
 	J=view(JJ,Indx,Indx);
 	
-	VSml = Float64[]
-	ISml = Float64[]
-	JSml = Float64[]
-	sizehint!(VSml, length(Indx)^2)
-	sizehint!(ISml, length(Indx)^2)
-	sizehint!(JSml, length(Indx)^2)
+	#If we dont pre allocate these
+	#VSml = Float64[]
+	#ISml = Float64[]
+	#JSml = Float64[]
+	#sizehint!(VSml, length(Indx)^2)
+	#sizehint!(ISml, length(Indx)^2)
+	#sizehint!(JSml, length(Indx)^2)
 	
 	
 	#Bits of A that are bad
@@ -32,31 +33,36 @@ function WorkOnJ_FastBigMats(A,x,y,Flag,II,JJ) #,ISml,JSml,VSml
 				if p==0 && A[idxi,idxj]==0
 					continue
 				end
-				push!(VSml,(A[idxi,idxj]*q)+p)
-				push!(ISml,idxi)
-				push!(JSml,idxj)
-
-				#counter+=1;				
-				#VSml[counter]=A[idxi,idxj]*q+p;
-				#ISml[counter]=idxi;
-				#JSml[counter]=idxj;
+				##If we dont pre allocate these
+				#push!(VSml,(A[idxi,idxj]*q)+p)
+				#push!(ISml,idxi)
+				#push!(JSml,idxj)
+				counter+=1;				
+				VSml[counter]=A[idxi,idxj]*q+p;
+				ISml[counter]=idxi;
+				JSml[counter]=idxj;
 				continue
 			end		
 			if I[i,j]==0;
 				#A way of working out how to find these without the loop over every entry would be far superior. 
 				continue
 			end
-			push!(VSml,A[idxi,idxj]*q)
-			push!(ISml,idxi)
-			push!(JSml,idxj)
-			#counter+=1;			
-			#VSml[counter]=A[idxi,idxj]*q;
-			#ISml[counter]=idxi;
-			#JSml[counter]=idxj;			
+			##If we dont pre allocate these			
+			#push!(VSml,A[idxi,idxj]*q)
+			#push!(ISml,idxi)
+			#push!(JSml,idxj)
+			counter+=1;			
+			VSml[counter]=A[idxi,idxj]*q;
+			ISml[counter]=idxi;
+			JSml[counter]=idxj;			
 		end
 
 	end	
+	#Getting the correct parts...
+	Iview=view(ISml,1:counter);
+	Jview=view(JSml,1:counter);
+	Vview=view(VSml,1:counter);
 	
-	Jsp=sparse(ISml, JSml, VSml,length(x),length(x));
+	Jsp=sparse(Iview, JSml[1:counter], Vview,length(x),length(x));
 	return(Jsp)
 end	

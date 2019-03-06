@@ -1,6 +1,8 @@
 function WorkOnJ(J,A::Array{Float64,2},x::Array{Float64},y::Array{Float64},I)
 	
 	Indx=findall(I)
+	
+	#J defined as: J = zeros(N,N); #spzeros 
 	fill!(J, 0.0)
 	#println("Resetting for saftey")
 	#J=zeros(size(J));

@@ -72,7 +72,6 @@ solver="zero";
 
 println("check all arrays below are used")
 # Init vars early on
-J = zeros(N,N); #spzeros 
 old_err=err;
 #vectors
 y=zeros(N);
@@ -98,18 +97,21 @@ I=convert(Array{Bool,1},I) #convert to bool
 Steps = 1:1:N::Int64
 II=repeat(Steps,1,N);
 JJ=transpose(II);
+#ASpc=sparse(A);
+#(AI,AJ,AV)=findnz(ASpc);
+Abad=findall(iszero, A);
+II[Abad].=0;
+JJ[Abad].=0; #Bad bits are zero (dropped later)
 
-ASpc=sparse(A);
-(AI,AJ,AV)=findnz(ASpc);
-ASpcbad=findall(iszero, ASpc);
-II[ASpcbad].=0;
-JJ[ASpcbad].=0; #Bad bits are zero (drop later)
+#Preallocate some vectors to work with
+ISml=zeros(N^2)
+JSml=zeros(N^2)
+VSml=zeros(N^2)
 
-
-#tic=time()	
-#toc=time()
-#println("Elapsed time")
-#println(toc-tic)
+tic=time()		
+toc=time()
+println("Elapsed time")
+println(toc-tic)
 
 
 Indx=0;
@@ -117,6 +119,8 @@ while (iter <= max_iter )
 	Indx+=1;
     println("LoopNo")
 	println(Indx)
+	
+
 	
 	#y = A*x (pre allocated y)
 	mul!(y,A,x) 
@@ -146,17 +150,16 @@ while (iter <= max_iter )
 	#--- in Jacobian of the Fischer function
 	S= (abs.(phi).<gamma) .& (abs.(x).<gamma);  # Bitmask for singular indices
 	I= (S.==false);        
-		
 
+
+	
 	#Function that creates sparse MAT J	
 	#J1=WorkOnJ(J,A,x,y,I)
 	println("Precompute J total time")
-	singleloopJ=@elapsed J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ)	
+	singleloopJ=@elapsed J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
 	totaltime1=totaltime1+singleloopJ;
 	println(totaltime1)
-	
-
-	
+		
 	#If you want to compare the outputs of the methods above:
 	 # (I1,J1,V1)=findnz(J1);
 	 # (I2,J2,V2)=findnz(J2);
@@ -164,6 +167,7 @@ while (iter <= max_iter )
 		  # @info size(V1) size(V2)
 		  # error("Not eq")
 	  # end	
+	#end
 	
 	if min(size(A,1),50)/2<30
 		restart=min(size(A,1),50)/2;  
@@ -184,9 +188,9 @@ while (iter <= max_iter )
 	#phiMSubset=view(phiM,I);
 
 	
-	println("Total elapsed solver time")
+	println("Total elapsed solver time") # Current setups of solvers 1 and 4 give very simular (good) results!
 	###1 IterativeSolvers
-	IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
+	singleloopS=@elapsed IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
 	
 	####2 KrylovKit
 	#alg = GMRES( krylovdim = restart, maxiter = 5, tol = 1e-6)
@@ -199,16 +203,17 @@ while (iter <= max_iter )
 	#end
 	
 	###4 Krylov DqGmres
-	#Some parameters atol::Float64=1.0e-8 rtol::Float64=1.0e-6 itmax::Int=0
+	##Some parameters atol::Float64=1.0e-8 rtol::Float64=1.0e-6 itmax::Int=0
 	#dqgmres_tol = 1.0e-6
-	#(dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,atol=dqgmres_tol,itmax=restart)
+	#singleloopS=@elapsed (dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,memory=restart,itmax =10*restart,rtol =dqgmres_tol)
 	
 	#singleloopS=@elapsed
-	#totaltime2=totaltime2+singleloopS;
-	#println(totaltime2)
+	totaltime2=totaltime2+singleloopS;
+	println(totaltime2)
 	
 	dx[I]=dxSubset;
-		
+	
+
 	# Test if the search direction is smaller than numerical precision. 
 	# That is if it is too close to zero.
 	if maximum(abs.(dx)) < eps()
@@ -219,7 +224,6 @@ while (iter <= max_iter )
 		break;
 	end
 	
-	#@info size(phiT) size(J)
 	# Test if we have dropped into a local minimia if so we are stuck
 	#nabla_phi = phiT*J;
 	mul!(nabla_phi,phiT,J) 		
@@ -240,7 +244,6 @@ while (iter <= max_iter )
 	end
 	
 
-	
 	#--- Armijo backtracking combined with a projected line-search ---------
 	tau= 1.0;                  # Current step length
 	f_0     = err;
@@ -259,7 +262,6 @@ while (iter <= max_iter )
 		
 		for i=1:length(phi_k); phi_kT[i]=phi_k[i]; end #transpose
 		f_k= 0.5*dot(phi_kT,phi_k);       # Natural merit function
-
 		
 		# Perform Armijo codition to see if we got a sufficient decrease
 		test=f_0+ tau*grad_f;
@@ -277,11 +279,12 @@ while (iter <= max_iter )
 	end #end of while lp 1. 
 	
 	# Update iterate with result from Armijo backtracking
-	x.= x_k;
+	x = x_k;
 
 	# Increment the number of iterations
 	iter = iter + 1;	
 
+	
 end #end of while lp2. 
 
 
