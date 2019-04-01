@@ -1,6 +1,6 @@
 #Start creating vars for function: 
 printstyled("creating func vars \n",color=:cyan)
-using Profile
+#using Profile
 
 global G
 G=pathof(FischerNewton);
