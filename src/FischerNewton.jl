@@ -2,6 +2,7 @@ module FischerNewton
 using LinearAlgebra
 using SparseArrays
 using IterativeSolvers
+using DelimitedFiles
 #using KrylovKit
 #using Test
 #using Krylov
