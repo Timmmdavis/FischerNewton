@@ -2,19 +2,51 @@
 printstyled("creating func vars \n",color=:cyan)
 using Profile
 
+global G
 G=pathof(FischerNewton);
 G=splitdir(G); #remove file name
 G=G[1];
 G=splitdir(G); #out of src
 G=G[1];
 
+#If we read mats in as text files:
+using DelimitedFiles
+
+#Would be nicer to do programatically
+if Sys.iswindows()
+	G=string(G,"\\test\\")
+else
+	G=string(G,"/test/")
+end
+GA=string(G,"Matricies-A.txt")
+Gb=string(G,"Matricies-b.txt")
+Gx=string(G,"Matricies-x.txt")
+Gy=string(G,"Matricies-y.txt")
+GDn=string(G,"Matricies-Dn.txt")
+GDss=string(G,"Matricies-Dss.txt")
+GDds=string(G,"Matricies-Dds.txt")
+GTn=string(G,"Matricies-Tn.txt")
+GTss=string(G,"Matricies-Tss.txt")
+GTds=string(G,"Matricies-Tds.txt")
+A=readdlm(GA, ',', Float64)
+b=readdlm(Gb, ',', Float64)
+xMATLAB=readdlm(Gx, ',', Float64)
+yMATLAB=readdlm(Gy, ',', Float64)
+DnMATLAB=readdlm(GDn, ',', Float64)
+DssMATLAB=readdlm(GDss, ',', Float64)
+DdsMATLAB=readdlm(GDds, ',', Float64)
+TnMATLAB=readdlm(GTn, ',', Float64)
+TssMATLAB=readdlm(GTss, ',', Float64)
+TdsMATLAB=readdlm(GTds, ',', Float64)
+
+
+#If we use MAT:
+#=
 if Sys.iswindows()
     G=string(G,"\\test\\Matricies.mat")
 else
 	G=string(G,"/test/Matricies.mat")
 end
-
-
 println(G)
 #Inputs - Loading influence matricies
 using MAT
@@ -30,6 +62,11 @@ DdsMATLAB=read(file, "Dds")
 TnMATLAB=read(file, "Tn")
 TssMATLAB=read(file, "Tss")
 TdsMATLAB=read(file, "Tds")
+=#
+
+
+
+
 
 printstyled("Vars loaded -> to fischerNewton func \n",color=:cyan)
 @time (x)=FischerNewton.fischer_newton(A,b);
@@ -157,3 +194,4 @@ if TdsRes>1E-5
 	error("Residual Tds too high")
 end
 printstyled("Residuals appear OK (according to the arbitary limits set) \n",color=:light_green)
+
