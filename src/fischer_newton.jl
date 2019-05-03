@@ -70,7 +70,7 @@ iter    = 1;           # Iteration count
 
 solver="zero";   
 
-println("check all arrays below are used")
+#println("check all arrays below are used")
 # Init vars early on
 old_err=err;
 #vectors
@@ -154,10 +154,10 @@ while (iter <= max_iter )
 	
 	#Function that creates sparse MAT J	
 	singleloopJ=@elapsed J=WorkOnJ(J,A,x,y,I,II)
-	println("Precompute J total time")
+	#println("Precompute J total time")
 	#singleloopJ=@elapsed J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
 	totaltime1=totaltime1+singleloopJ;
-	println(totaltime1)
+	#println(totaltime1)
 		
 	#If you want to compare the outputs of the methods above:
 	 # (I1,J1,V1)=findnz(J1);
@@ -187,9 +187,10 @@ while (iter <= max_iter )
 	#phiMSubset=view(phiM,I);
 
 	
-	println("Total elapsed solver time") # Current setups of solvers 1 and 4 give very simular (good) results!
+	#println("Total elapsed solver time") # Current setups of solvers 1 and 4 give very simular (good) results!
 	###1 IterativeSolvers
-	singleloopS=@elapsed dxSubset=IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
+	#singleloopS=@elapsed 
+	dxSubset=IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
 	
 	####2 KrylovKit
 	#alg = GMRES( krylovdim = restart, maxiter = 5, tol = 1e-6)
@@ -207,8 +208,8 @@ while (iter <= max_iter )
 	#singleloopS=@elapsed (dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,memory=restart,itmax =10*restart,rtol =dqgmres_tol)
 	
 	#singleloopS=@elapsed
-	totaltime2=totaltime2+singleloopS;
-	println(totaltime2)
+	#totaltime2=totaltime2+singleloopS;
+	#println(totaltime2)
 	
 	dx[I]=dxSubset;
 	
