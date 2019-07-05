@@ -104,27 +104,28 @@ II[Abad].=0;
 JJ[Abad].=0; #Bad bits are zero (dropped later)
 
 #Preallocate some vectors to work with
-ISml=zeros(N^2)
-JSml=zeros(N^2)
-VSml=zeros(N^2)
+#ISml=zeros(N^2)
+#JSml=zeros(N^2)
+#VSml=zeros(N^2)
 
-tic=time()		
-toc=time()
-println("Elapsed time")
-println(toc-tic)
+Jsubs=copy(J)
+#tic=time()		
+#toc=time()
+#println("Elapsed time")
+#println(toc-tic)
 
 
 Indx=0;
 while (iter <= max_iter )
 	Indx+=1;
-    println("LoopNo")
-	println(Indx)
+    #println("LoopNo")
+	#println(Indx)
 	
 
 	
 	#y = A*x (pre allocated y)
 	mul!(y,A,x) 
-	y=y+b
+	y+=b
 	
 
 	#--- Test all stopping criteria used ------------------------------------
@@ -153,10 +154,10 @@ while (iter <= max_iter )
 
 	
 	#Function that creates sparse MAT J	
-	singleloopJ=@elapsed J=WorkOnJ(J,A,x,y,I,II)
+	J=WorkOnJ(J,A,x,y,I,II)
 	#println("Precompute J total time")
 	#singleloopJ=@elapsed J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
-	totaltime1=totaltime1+singleloopJ;
+	#totaltime1=totaltime1+singleloopJ;
 	#println(totaltime1)
 		
 	#If you want to compare the outputs of the methods above:
@@ -177,20 +178,40 @@ while (iter <= max_iter )
 	
 	dx=dx.*0; #Reset Newton direction
 	phiM=-phi;	
-				
-	
+			
+
+	#Adding to preexisting mat first 1:n rows (memoryless) then doing a view. 
+	#Krylov is faster if we view ordered subsection of the matrix
 	dxSubset=dx[I];
-	JSubset=J[I,I];
+	icount=0
+	jcount=0
+	n=sum(I.==true)
+	for i=1:length(I)
+		if I[i]==true
+			icount+=1
+		end
+		for j=1:length(I)
+			if I[j]==true
+				jcount+=1
+			end
+			if I[i]==true && I[j]==true
+				Jsubs[icount,jcount]=J[i,j];
+			end
+		end
+		jcount=0;#reset
+	end
+	#JSubset=J[I,I];
+
+
 	phiMSubset=phiM[I]
 	#dxSubset=view(dx,I);
-	#JSubset=view(J,I,I);
+	JSubset=view(Jsubs,1:n,1:n);
 	#phiMSubset=view(phiM,I);
 
-	
 	#println("Total elapsed solver time") # Current setups of solvers 1 and 4 give very simular (good) results!
 	###1 IterativeSolvers
-	#singleloopS=@elapsed 
-	dxSubset=IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
+	##singleloopS=@elapsed 
+	#dxSubset=IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
 	
 	####2 KrylovKit
 	#alg = GMRES( krylovdim = restart, maxiter = 5, tol = 1e-6)
@@ -204,15 +225,15 @@ while (iter <= max_iter )
 	
 	###4 Krylov DqGmres
 	##Some parameters atol::Float64=1.0e-8 rtol::Float64=1.0e-6 itmax::Int=0
-	#dqgmres_tol = 1.0e-6
-	#singleloopS=@elapsed (dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,memory=restart,itmax =10*restart,rtol =dqgmres_tol)
-	
+	dqgmres_tol = 1.0e-6
+	(dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,memory=restart,itmax =10*restart,rtol =dqgmres_tol)
+
 	#singleloopS=@elapsed
 	#totaltime2=totaltime2+singleloopS;
 	#println(totaltime2)
 	
 	dx[I]=dxSubset;
-	
+
 
 	# Test if the search direction is smaller than numerical precision. 
 	# That is if it is too close to zero.

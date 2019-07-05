@@ -69,9 +69,10 @@ TdsMATLAB=read(file, "Tds")
 
 
 printstyled("Vars loaded -> to fischerNewton func \n",color=:cyan)
-@time (x)=FischerNewton.fischer_newton(A,b);
-#Profile.print(format=:flat)# (sortedby=:count)
+#@profile (x)=FischerNewton.fischer_newton(A,b);
+#Profile.print(format=:tree)#(format=:flat) (sortedby=:count)
 
+@time (x)=FischerNewton.fischer_newton(A,b);
 printstyled("Out of func \n",color=:cyan)
 
 y = A*x+b;

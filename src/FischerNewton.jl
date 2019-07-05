@@ -5,7 +5,7 @@ using IterativeSolvers
 using DelimitedFiles
 #using KrylovKit
 #using Test
-#using Krylov
+using Krylov
 #using MAT
 #using Profile
 #using InteractiveUtils
