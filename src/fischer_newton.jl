@@ -125,8 +125,8 @@ Jsubs=copy(J)
 Indx=0;
 while (iter <= max_iter )
 	Indx+=1;
-    println("LoopNo")
-	println(Indx)
+    #println("LoopNo")
+	#println(Indx)
 	
 
 	
@@ -260,94 +260,90 @@ while (iter <= max_iter )
 
 
 	# Test if the search direction is smaller than numerical precision. 
-	# That is if it is too close to zero.
-	for i=1:N
-		absdx[i]=abs(dx[i])
-	end
-	if maximum(absdx) < eps()
-		flag = 5;
-		# Rather than just giving up we may just use the gradient direction
-		# instead. However, I am lazy here!
-		#  dx = nabla_phi'
-		break;
-	end
-	
-	# Test if we have dropped into a local minimia if so we are stuck
-	#nabla_phi = phiT*J;
-	mul!(nabla_phi,phiT,J) 		
-	if norm(nabla_phi) < tol_abs
-		flag = 6;
-		break;
-	end
-	
-
-	# Test if our search direction is a 'sufficient' descent direction
-	mul!(nabdx,nabla_phi,dx)
-	if  nabdx[1]  > -rho*(dx'*dx)
-		flag = 7;
-		# Rather than just giving up we may just use the gradient direction
-		# instead. However, I am lazy here!
-		#  dx = nabla_phi'
-		break;
-	end
-	
-
-	#--- Armijo backtracking combined with a projected line-search ---------
-	tau= 1.0;                  # Current step length
-	f_0     = err[1];
-	grad_f= beta*dot(nabla_phi,dx);
-	
-
-	while true #Inf loop, escapes when a break is performed
-
-
-
+		# That is if it is too close to zero.
 		for i=1:N
-			xdxtau[i]=x[i]+dx[i]*tau
-			#non negativity
-			if xdxtau[i]<=0.
-				x_k[i]=0.
-			else
-				x_k[i]=xdxtau[i]
+			absdx[i]=abs(dx[i])
+		end
+		if maximum(absdx) < eps()
+			flag = 5;
+			# Rather than just giving up we may just use the gradient direction
+			# instead. However, I am lazy here!
+			#  dx = nabla_phi'
+			break;
+		end
+		
+		# Test if we have dropped into a local minimia if so we are stuck
+		#nabla_phi = phiT*J;
+		mul!(nabla_phi,phiT,J) 		
+		if norm(nabla_phi) < tol_abs
+			flag = 6;
+			break;
+		end
+		
+		# Test if our search direction is a 'sufficient' descent direction
+		mul!(nabdx,nabla_phi,dx)
+		if  nabdx[1]  > -rho*(dx'*dx)
+			flag = 7;
+			# Rather than just giving up we may just use the gradient direction
+			# instead. However, I am lazy here!
+			#  dx = nabla_phi'
+			break;
+		end
+			
+		#--- Armijo backtracking combined with a projected line-search ---------
+		tau= 1.0;                  # Current step length
+		f_0     = err[1];
+		grad_f= beta*dot(nabla_phi,dx);
+		#x_k     = copy(x);
+
+		
+		while true #Inf loop, escapes when a break is performed
+			#x_k=max.(0.0,x.+dx.*tau) #x_k   = max.(0.0,x + dx*tau); #non negativity
+			
+			for i=1:N
+				xdxtau[i]=x[i]+dx[i]*tau
+				#non negativity
+				if xdxtau[i]<=0.
+					x_k[i]=0.
+				else
+					x_k[i]=xdxtau[i]
+				end
 			end
-		end
 
-		#y_k   = A*x_k + b; (pre allocated y_k)
-		mul!(y_k,A,x_k) 
+			#y_k   = A*x_k + b; (pre allocated y_k)
+			mul!(y_k,A,x_k) 
+			for i=1:N
+					y_k[i]+=b[i]
+			end
+			phi_k=phi_lambda!( y_k, x_k, lambda,phi_k,phi_l );	
+			#phi_k=phi_lambda( y_k, x_k, lambda );	
+			
+			for i=1:length(phi_k); phi_kT[i]=phi_k[i]; end #transpose
+			f_k= 0.5*dot(phi_kT,phi_k);       # Natural merit function
+			
+			# Perform Armijo codition to see if we got a sufficient decrease
+			test=f_0+ tau*grad_f;
+			if ( f_k <= test)
+				break;
+			end
+			# Test if time-step became too small
+			if tau*tau < gamma	
+				break;
+			end	
+			
+			tau= alpha*tau;
+			
+		end #end of while lp 1. 
+		
+		# Update iterate with result from Armijo backtracking
+		#x = copy(x_k);
 		for i=1:N
-			y_k[i]+=b[i]
+			x[i]=x_k[i]
 		end
-
-
-		phi_k=phi_lambda!( y_k, x_k, lambda,phi_k,phi_l );	
-		#phi_k=phi_lambda( y_k, x_k, lambda );	
+		# Increment the number of iterations
+		iter = iter + 1;	
 		
-		for i=1:length(phi_k); phi_kT[i]=phi_k[i]; end #transpose
-		f_k= 0.5*dot(phi_kT,phi_k);       # Natural merit function
-		
-		# Perform Armijo codition to see if we got a sufficient decrease
-		test=f_0+ tau*grad_f;
-		if ( f_k <= test)
-			break;
-		end
-
-		# Test if time-step became too small
-		if tau*tau < gamma	
-			break;
-		end	
-		
-		tau= alpha*tau;
-		
-	end #end of while lp 1. 
-	
-	# Update iterate with result from Armijo backtracking
-	x = x_k;
-
-	# Increment the number of iterations
-	iter = iter + 1;	
-
-	
-end #end of while lp2. 
+	end #end of while lp2. 
 
 
 	
