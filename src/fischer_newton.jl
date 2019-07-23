@@ -64,9 +64,11 @@ rho     = eps();     # Descent direction test parameter used to test if the Newt
 
 convergence = []; # Used when profiling to measure the convergence rate
 
-err     = Inf;         # Current error measure
+err     = [Inf];         # Current error measure
 #x         				# Current iterate
 iter    = 1;           # Iteration count
+n=[0]; 
+nabdx=[0.]
 
 solver="zero";   
 
@@ -81,9 +83,12 @@ phi_k=copy(y);
 phi_kT=zeros(1,N);
 phi_l=copy(y); 
 phiM=copy(y);
-dx=copy(y);   
+dx=copy(y);  
+absdx=copy(y); 
 S=copy(y);
 y_k=copy(y);
+xdxtau=copy(y);
+x_k = copy(y);
 nabla_phi=similar(phiT);
 totaltime1=0.;
 totaltime2=0.;
@@ -91,9 +96,11 @@ test=[0.0];
 grad_f=[0.0];
 f_k=[0.0]
 tau=0.0;
+
 I=zeros(Int64, N)
 I=convert(Array{Bool,1},I) #convert to bool
 J = zeros(N,N); #spzeros
+
 Steps = 1:1:N::Int64
 II=repeat(Steps,1,N);
 JJ=transpose(II);
@@ -118,30 +125,32 @@ Jsubs=copy(J)
 Indx=0;
 while (iter <= max_iter )
 	Indx+=1;
-    #println("LoopNo")
-	#println(Indx)
+    println("LoopNo")
+	println(Indx)
 	
 
 	
 	#y = A*x (pre allocated y)
 	mul!(y,A,x) 
-	y+=b
-	
+	for i=1:N
+		y[i]+=b[i]
+	end
 
 	#--- Test all stopping criteria used ------------------------------------
 	phi = phi_lambda!(y, x, lambda,phi,phi_l);         # Calculate fischer function
 	#phi=phi_lambda(y, x,lambda)
 	
-	old_err = err;
+	old_err = err[1];
 	for i=1:length(phi); phiT[i]=phi[i]; end #transpose
-	err     = 0.5*(phiT*phi);       # Natural merit function
-	err=err[1]
+	# Natural merit function
+	mul!(err,phiT,phi)
+	err[1]=err[1]*0.5     
 
-	if (abs(err-old_err) / abs(old_err)) < tol_rel  # Relative stopping criteria
+	if (abs(err[1]-old_err) / abs(old_err)) < tol_rel  # Relative stopping criteria
 		flag = 3;
 		break;
 	end
-	if err < tol_abs   # Absolute stopping criteria
+	if err[1] < tol_abs   # Absolute stopping criteria
 		flag = 4;
 		break;
 	end
@@ -149,24 +158,33 @@ while (iter <= max_iter )
 	#--- Solve the Newton system --------------------------------------------
 	#--- First we find the Jacobian matrix. We wish to avoid singular points
 	#--- in Jacobian of the Fischer function
-	S= (abs.(phi).<gamma) .& (abs.(x).<gamma);  # Bitmask for singular indices
-	I= (S.==false);        
-
+	for i=1:N
+		# Bitmask for singular indices
+		test1=abs(phi[i])<gamma
+		test2=abs(x[i])<gamma
+		if test1 & test2
+			I[i]=false    
+		else
+			I[i]=true
+		end
+	end
 	
 	#Function that creates sparse MAT J	
 	J=WorkOnJ(J,A,x,y,I,II)
 	#println("Precompute J total time")
-	#singleloopJ=@elapsed J=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
+	#J2=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
 	#totaltime1=totaltime1+singleloopJ;
 	#println(totaltime1)
 		
 	#If you want to compare the outputs of the methods above:
-	 # (I1,J1,V1)=findnz(J1);
-	 # (I2,J2,V2)=findnz(J2);
-	  # if !isequal(V1,V2)
-		  # @info size(V1) size(V2)
-		  # error("Not eq")
-	  # end	
+	#=
+	 (I1,J1,V1)=findnz(J);
+	 (I2,J2,V2)=findnz(J2);
+	  if !isequal(V1,V2)
+		   @info size(V1) size(V2)
+		   error("Not eq")
+	   end	
+	=#
 	#end
 	
 	if min(size(A,1),50)/2<30
@@ -176,16 +194,22 @@ while (iter <= max_iter )
 	end  
 	restart	= convert(Int64,restart)
 	
-	dx=dx.*0; #Reset Newton direction
-	phiM=-phi;	
-			
+	for i=1:N
+		dx[i]=0.0 #Reset Newton direction
+		phiM[i]=-phi[i];	
+	end
 
 	#Adding to preexisting mat first 1:n rows (memoryless) then doing a view. 
 	#Krylov is faster if we view ordered subsection of the matrix
 	dxSubset=dx[I];
 	icount=0
 	jcount=0
-	n=sum(I.==true)
+	n=0
+	for i=1:N
+		if I[i]==true
+			n+=1
+		end
+	end
 	for i=1:length(I)
 		if I[i]==true
 			icount+=1
@@ -237,7 +261,10 @@ while (iter <= max_iter )
 
 	# Test if the search direction is smaller than numerical precision. 
 	# That is if it is too close to zero.
-	if maximum(abs.(dx)) < eps()
+	for i=1:N
+		absdx[i]=abs(dx[i])
+	end
+	if maximum(absdx) < eps()
 		flag = 5;
 		# Rather than just giving up we may just use the gradient direction
 		# instead. However, I am lazy here!
@@ -255,7 +282,7 @@ while (iter <= max_iter )
 	
 
 	# Test if our search direction is a 'sufficient' descent direction
-	nabdx=nabla_phi*dx
+	mul!(nabdx,nabla_phi,dx)
 	if  nabdx[1]  > -rho*(dx'*dx)
 		flag = 7;
 		# Rather than just giving up we may just use the gradient direction
@@ -267,17 +294,31 @@ while (iter <= max_iter )
 
 	#--- Armijo backtracking combined with a projected line-search ---------
 	tau= 1.0;                  # Current step length
-	f_0     = err;
+	f_0     = err[1];
 	grad_f= beta*dot(nabla_phi,dx);
-	x_k     = x;
 	
 
 	while true #Inf loop, escapes when a break is performed
 
-		x_k=max.(0.0,x.+dx.*tau) #x_k   = max.(0.0,x + dx*tau); #non negativity
+
+
+		for i=1:N
+			xdxtau[i]=x[i]+dx[i]*tau
+			#non negativity
+			if xdxtau[i]<=0.
+				x_k[i]=0.
+			else
+				x_k[i]=xdxtau[i]
+			end
+		end
+
 		#y_k   = A*x_k + b; (pre allocated y_k)
 		mul!(y_k,A,x_k) 
-		y_k=y_k+b
+		for i=1:N
+			y_k[i]+=b[i]
+		end
+
+
 		phi_k=phi_lambda!( y_k, x_k, lambda,phi_k,phi_l );	
 		#phi_k=phi_lambda( y_k, x_k, lambda );	
 		
