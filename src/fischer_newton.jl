@@ -62,36 +62,29 @@ rho     = eps();     # Descent direction test parameter used to test if the Newt
 
 #--- Setup values need while iterating ------------------------------------
 
-convergence = []; # Used when profiling to measure the convergence rate
+#Using the zero solver as described in the original function
+#solver="zero";   
 
-err     = [Inf];         # Current error measure
-#x         				# Current iterate
-iter    = 1;           # Iteration count
-n=[0]; 
-nabdx=[0.]
-
-solver="zero";   
-
-#println("check all arrays below are used")
-# Init vars early on
-old_err=err;
+err = [Inf];         # Current error measure
+iter= 1;           # Iteration count
+n 	=[0]; 
+nabdx 	=[0.]
+old_err =err;
 #vectors
-y=zeros(N);
-phi=copy(y);
+y 	=zeros(N);
+phi =copy(y);
 phiT=zeros(1,N);
-phi_k=copy(y); 
-phi_kT=zeros(1,N);
-phi_l=copy(y); 
-phiM=copy(y);
-dx=copy(y);  
-absdx=copy(y); 
-S=copy(y);
-y_k=copy(y);
-xdxtau=copy(y);
-x_k = copy(y);
+phi_k 	=copy(y); 
+phi_kT 	=zeros(1,N);
+phi_l 	=copy(y); 
+phiM 	=copy(y);
+dx 	=copy(y);  
+absdx 	=copy(y); 
+y_k =copy(y);
+xdxtau 	=copy(y);
+x_k 	= copy(y);
 nabla_phi=similar(phiT);
-totaltime1=0.;
-totaltime2=0.;
+
 test=[0.0];
 grad_f=[0.0];
 f_k=[0.0]
@@ -103,24 +96,30 @@ J = zeros(N,N); #spzeros
 
 Steps = 1:1:N::Int64
 II=repeat(Steps,1,N);
-JJ=transpose(II);
-#ASpc=sparse(A);
-#(AI,AJ,AV)=findnz(ASpc);
+
+
 Abad=findall(iszero, A);
 II[Abad].=0;
-JJ[Abad].=0; #Bad bits are zero (dropped later)
 
-#Preallocate some vectors to work with
-#ISml=zeros(N^2)
-#JSml=zeros(N^2)
-#VSml=zeros(N^2)
 
 Jsubs=copy(J)
+
+totaltime1=0.;
+totaltime2=0.;
 #tic=time()		
 #toc=time()
 #println("Elapsed time")
 #println(toc-tic)
 
+#SparseMat stuff:
+#=
+JJ=transpose(II);
+JJ[Abad].=0; #Bad bits are zero (dropped later)
+#Preallocate some vectors to work with
+ISml=zeros(N^2)
+JSml=zeros(N^2)
+VSml=zeros(N^2)
+=#
 
 Indx=0;
 while (iter <= max_iter )
@@ -128,9 +127,7 @@ while (iter <= max_iter )
     #println("LoopNo")
 	#println(Indx)
 	
-
-	
-	#y = A*x (pre allocated y)
+	#y = A*x+b 
 	mul!(y,A,x) 
 	for i=1:N
 		y[i]+=b[i]
@@ -138,7 +135,6 @@ while (iter <= max_iter )
 
 	#--- Test all stopping criteria used ------------------------------------
 	phi = phi_lambda!(y, x, lambda,phi,phi_l);         # Calculate fischer function
-	#phi=phi_lambda(y, x,lambda)
 	
 	old_err = err[1];
 	for i=1:length(phi); phiT[i]=phi[i]; end #transpose
@@ -169,23 +165,19 @@ while (iter <= max_iter )
 		end
 	end
 	
-	#Function that creates sparse MAT J	
+	#Function that creates Matrix J (sparse if using 2nd func)	
 	J=WorkOnJ(J,A,x,y,I,II)
-	#println("Precompute J total time")
-	#J2=WorkOnJ_FastBigMats(A,x,y,I,II,JJ,ISml,JSml,VSml)	
-	#totaltime1=totaltime1+singleloopJ;
-	#println(totaltime1)
+	#J2=WorkOnJ_Sparse(A,x,y,I,II,JJ,ISml,JSml,VSml)	
 		
 	#If you want to compare the outputs of the methods above:
 	#=
-	 (I1,J1,V1)=findnz(J);
-	 (I2,J2,V2)=findnz(J2);
-	  if !isequal(V1,V2)
-		   @info size(V1) size(V2)
-		   error("Not eq")
-	   end	
+	(I1,J1,V1)=findnz(J);
+	(I2,J2,V2)=findnz(J2);
+	if !isequal(V1,V2)
+	   @info size(V1) size(V2)
+	   error("Not eq")
+	end	
 	=#
-	#end
 	
 	if min(size(A,1),50)/2<30
 		restart=min(size(A,1),50)/2;  
@@ -224,22 +216,17 @@ while (iter <= max_iter )
 		end
 		jcount=0;#reset
 	end
-	#JSubset=J[I,I];
 
 
 	phiMSubset=phiM[I]
-	#dxSubset=view(dx,I);
 	JSubset=view(Jsubs,1:n,1:n);
-	#phiMSubset=view(phiM,I);
 
-	#println("Total elapsed solver time") # Current setups of solvers 1 and 4 give very simular (good) results!
 	###1 IterativeSolvers
-	##singleloopS=@elapsed 
 	#dxSubset=IterativeSolvers.gmres!(dxSubset,JSubset,phiMSubset,tol=1e-6,restart=restart, initially_zero=true,maxiter=10*restart);
 	
 	####2 KrylovKit
 	#alg = GMRES( krylovdim = restart, maxiter = 5, tol = 1e-6)
-	#singleloopS=@elapsed dxSubset, info = @inferred linsolve(JSubset,phiMSubset,dxSubset, alg)
+	#dxSubset, info = @inferred linsolve(JSubset,phiMSubset,dxSubset, alg)
 	
 	###3 Krylov.jl.git#gmres
 	##DEFINE OUT OF LOOP global dxSubset
@@ -252,99 +239,91 @@ while (iter <= max_iter )
 	dqgmres_tol = 1.0e-6
 	(dxSubset,stats) = Krylov.dqgmres(JSubset, phiMSubset,memory=restart,itmax =10*restart,rtol =dqgmres_tol)
 
-	#singleloopS=@elapsed
-	#totaltime2=totaltime2+singleloopS;
-	#println(totaltime2)
 	
 	dx[I]=dxSubset;
 
 
 	# Test if the search direction is smaller than numerical precision. 
-		# That is if it is too close to zero.
+	# That is if it is too close to zero.
+	for i=1:N
+		absdx[i]=abs(dx[i])
+	end
+	if maximum(absdx) < eps()
+		flag = 5;
+		# Rather than just giving up we may just use the gradient direction
+		# instead. However, I am lazy here!
+		#  dx = nabla_phi'
+		break;
+	end
+	
+	# Test if we have dropped into a local minimia if so we are stuck
+	#nabla_phi = phiT*J;
+	mul!(nabla_phi,phiT,J) 		
+	if norm(nabla_phi) < tol_abs
+		flag = 6;
+		break;
+	end
+	
+	# Test if our search direction is a 'sufficient' descent direction
+	mul!(nabdx,nabla_phi,dx)
+	if  nabdx[1]  > -rho*(dx'*dx)
+		flag = 7;
+		# Rather than just giving up we may just use the gradient direction
+		# instead. However, I am lazy here!
+		#  dx = nabla_phi'
+		break;
+	end
+		
+	#--- Armijo backtracking combined with a projected line-search ---------
+	tau= 1.0;                  # Current step length
+	f_0     = err[1];
+	grad_f= beta*dot(nabla_phi,dx);
+
+
+	while true #Inf loop, escapes when a break is performed
+		
 		for i=1:N
-			absdx[i]=abs(dx[i])
+			xdxtau[i]=x[i]+dx[i]*tau
+			#non negativity
+			if xdxtau[i]<=0.
+				x_k[i]=0.
+			else
+				x_k[i]=xdxtau[i]
+			end
 		end
-		if maximum(absdx) < eps()
-			flag = 5;
-			# Rather than just giving up we may just use the gradient direction
-			# instead. However, I am lazy here!
-			#  dx = nabla_phi'
-			break;
-		end
-		
-		# Test if we have dropped into a local minimia if so we are stuck
-		#nabla_phi = phiT*J;
-		mul!(nabla_phi,phiT,J) 		
-		if norm(nabla_phi) < tol_abs
-			flag = 6;
-			break;
-		end
-		
-		# Test if our search direction is a 'sufficient' descent direction
-		mul!(nabdx,nabla_phi,dx)
-		if  nabdx[1]  > -rho*(dx'*dx)
-			flag = 7;
-			# Rather than just giving up we may just use the gradient direction
-			# instead. However, I am lazy here!
-			#  dx = nabla_phi'
-			break;
-		end
-			
-		#--- Armijo backtracking combined with a projected line-search ---------
-		tau= 1.0;                  # Current step length
-		f_0     = err[1];
-		grad_f= beta*dot(nabla_phi,dx);
-		#x_k     = copy(x);
 
-		
-		while true #Inf loop, escapes when a break is performed
-			#x_k=max.(0.0,x.+dx.*tau) #x_k   = max.(0.0,x + dx*tau); #non negativity
-			
-			for i=1:N
-				xdxtau[i]=x[i]+dx[i]*tau
-				#non negativity
-				if xdxtau[i]<=0.
-					x_k[i]=0.
-				else
-					x_k[i]=xdxtau[i]
-				end
-			end
-
-			#y_k   = A*x_k + b; (pre allocated y_k)
-			mul!(y_k,A,x_k) 
-			for i=1:N
-					y_k[i]+=b[i]
-			end
-			phi_k=phi_lambda!( y_k, x_k, lambda,phi_k,phi_l );	
-			#phi_k=phi_lambda( y_k, x_k, lambda );	
-			
-			for i=1:length(phi_k); phi_kT[i]=phi_k[i]; end #transpose
-			f_k= 0.5*dot(phi_kT,phi_k);       # Natural merit function
-			
-			# Perform Armijo codition to see if we got a sufficient decrease
-			test=f_0+ tau*grad_f;
-			if ( f_k <= test)
-				break;
-			end
-			# Test if time-step became too small
-			if tau*tau < gamma	
-				break;
-			end	
-			
-			tau= alpha*tau;
-			
-		end #end of while lp 1. 
-		
-		# Update iterate with result from Armijo backtracking
-		#x = copy(x_k);
+		#y_k   = A*x_k + b; (pre allocated y_k)
+		mul!(y_k,A,x_k) 
 		for i=1:N
-			x[i]=x_k[i]
+				y_k[i]+=b[i]
 		end
-		# Increment the number of iterations
-		iter = iter + 1;	
+		phi_k=phi_lambda!( y_k, x_k, lambda,phi_k,phi_l );		
 		
-	end #end of while lp2. 
-
+		for i=1:length(phi_k); phi_kT[i]=phi_k[i]; end #transpose
+		f_k= 0.5*dot(phi_kT,phi_k);       # Natural merit function
+		
+		# Perform Armijo codition to see if we got a sufficient decrease
+		test=f_0+ tau*grad_f;
+		if ( f_k <= test)
+			break;
+		end
+		# Test if time-step became too small
+		if tau*tau < gamma	
+			break;
+		end	
+		
+		tau= alpha*tau;
+		
+	end #end of while lp 1. 
+	
+	# Update iterate with result from Armijo backtracking
+	for i=1:N
+		x[i]=x_k[i]
+	end
+	# Increment the number of iterations
+	iter = iter + 1;	
+	
+end #end of while lp. 
 
 	
 if iter >= max_iter
@@ -352,7 +331,7 @@ if iter >= max_iter
 	iter = iter - 1;
 end		
 
-return(x); #, err, iter, flag, convergence)
+return(x); 
 
 end #Func end
 
