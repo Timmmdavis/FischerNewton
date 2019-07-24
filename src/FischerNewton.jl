@@ -16,6 +16,6 @@ using Krylov
 include("fischer_newton.jl")
 include("CompResiduals.jl")
 include("WorkOnJ.jl")
-include("WorkOnJ_FastBigMats.jl")
+include("WorkOnJ_Sparse.jl")
 
 end

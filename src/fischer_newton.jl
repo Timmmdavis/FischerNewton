@@ -53,17 +53,17 @@ x.= max.(x,0.0);
 
 #--- Here comes a bunch of magic constants --------------------------------
 
+#Using the 'zero' solver as described in the original function
+#solver="zero";   
+
 #doesn't make much diff
-h       = 1e-7;    # Fixed constant used to evaluate the directional detivative
+# h       = 1e-7;    # Fixed constant used to evaluate the directional detivative - not used in zero solver
 alpha   = 0.5;     # Step reduction parameter for projected Armijo backtracking line search
 beta    = 0.001;   # Sufficent decrease parameter for projected Armijo backtracking line search
 gamma   = 1e-28;   # Perturbation values used to fix near singular points in derivative
 rho     = eps();     # Descent direction test parameter used to test if the Newton direction does a good enough job.
 
 #--- Setup values need while iterating ------------------------------------
-
-#Using the zero solver as described in the original function
-#solver="zero";   
 
 err = [Inf];         # Current error measure
 iter= 1;           # Iteration count
@@ -104,22 +104,24 @@ II[Abad].=0;
 
 Jsubs=copy(J)
 
-totaltime1=0.;
-totaltime2=0.;
+#totaltime1=0.;
+#totaltime2=0.;
 #tic=time()		
 #toc=time()
 #println("Elapsed time")
 #println(toc-tic)
 
-#SparseMat stuff:
-#=
-JJ=transpose(II);
-JJ[Abad].=0; #Bad bits are zero (dropped later)
-#Preallocate some vectors to work with
-ISml=zeros(N^2)
-JSml=zeros(N^2)
-VSml=zeros(N^2)
-=#
+useSparse=false
+
+if useSparse==true
+	#SparseMat stuff:
+	JJ=transpose(II);
+	JJ[Abad].=0; #Bad bits are zero (dropped later)
+	#Preallocate some vectors to work with
+	ISml=zeros(N^2)
+	JSml=zeros(N^2)
+	VSml=zeros(N^2)
+end
 
 Indx=0;
 while (iter <= max_iter )
@@ -166,10 +168,12 @@ while (iter <= max_iter )
 	end
 	
 	#Function that creates Matrix J (sparse if using 2nd func)	
-	J=WorkOnJ(J,A,x,y,I,II)
-	#J2=WorkOnJ_Sparse(A,x,y,I,II,JJ,ISml,JSml,VSml)	
-		
-	#If you want to compare the outputs of the methods above:
+	if useSparse==false
+		J=WorkOnJ(J,A,x,y,I,II)
+	else
+		J=WorkOnJ_Sparse(A,x,y,I,II,JJ,ISml,JSml,VSml,N)	
+	end
+	#If you want to compare the outputs of the two functions above:
 	#=
 	(I1,J1,V1)=findnz(J);
 	(I2,J2,V2)=findnz(J2);
@@ -193,7 +197,6 @@ while (iter <= max_iter )
 
 	#Adding to preexisting mat first 1:n rows (memoryless) then doing a view. 
 	#Krylov is faster if we view ordered subsection of the matrix
-	dxSubset=dx[I];
 	icount=0
 	jcount=0
 	n=0
@@ -214,11 +217,11 @@ while (iter <= max_iter )
 				Jsubs[icount,jcount]=J[i,j];
 			end
 		end
-		jcount=0;#reset
+		jcount=0; #reset
 	end
 
-
-	phiMSubset=phiM[I]
+	dxSubset=view(dx,I);
+	phiMSubset=view(phiM,I)
 	JSubset=view(Jsubs,1:n,1:n);
 
 	###1 IterativeSolvers
