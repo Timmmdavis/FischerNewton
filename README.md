@@ -19,4 +19,6 @@ This is faster than the MATLAB version of FischerNewton in [CutAndDisplace](http
 | FischerNewton\test\Matricies.mat     | 1560*1560     | 1.2   |  0.8  |  1.5  |
 | FischerNewton\test\Matricies_1000.mat | 5225*5225    | 22.3   | 19.5  |  1.14  |
 
+For build here: [24/7/2019](https://github.com/Timmmdavis/FischerNewton/commit/f112381776df1ae641a761fe5b0709f1f5e008b9) on Windows 64bit 4 core machine vs MATLAB 2018a. 
+
 
