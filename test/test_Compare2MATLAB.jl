@@ -73,7 +73,8 @@ printstyled("Vars loaded -> to fischerNewton func \n",color=:cyan)
 #@profile (x)=FischerNewton.fischer_newton(A,b);
 #Profile.print(format=:tree)#(format=:flat) (sortedby=:count)
 
-@time (Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys)=FischerNewton.InitArrays(A,b);
+n=length(b)
+@time (Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys)=FischerNewton.InitArrays(n);
 @time (x)=FischerNewton.fischer_newton(A,b,Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys);
 (Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys)=FischerNewton.ResetInitArrays(Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys);
 @time (x)=FischerNewton.fischer_newton(A,b,Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys);

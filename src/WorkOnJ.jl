@@ -16,7 +16,7 @@ function WorkOnJ(J,A::Array{Float64,2},x::Array{Float64},y::Array{Float64},I,II)
 			if I[j]==false 
 				continue
 			end	
-			if II[i,j]==0;
+			if A[i,j]==0.;
 				#A way of working out how to find these without the loop over every entry would be far superior. 
 				continue
 			end

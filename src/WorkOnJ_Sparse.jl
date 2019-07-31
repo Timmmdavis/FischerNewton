@@ -27,7 +27,7 @@ function WorkOnJ_Sparse(A,x,y,Flag,II,JJ,ISml,JSml,VSml,N) #,ISml,JSml,VSml
 				JSml[counter]=j;
 				continue
 			end		
-			if II[i,j]==0;
+			if A[i,j]==0;
 				#A way of working out how to find these without the loop over every entry would be far superior. 
 				continue
 			end

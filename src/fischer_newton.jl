@@ -81,8 +81,6 @@ nabla_phi=Mats.nabla_phi
 I=Bls.I
 II=IntArrys.II
 
-
-
 Indx=0;
 while (iter <= max_iter )
 	Indx+=1;

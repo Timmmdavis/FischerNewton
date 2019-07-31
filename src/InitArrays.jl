@@ -1,6 +1,7 @@
-function InitArrays(A,b)
+function InitArrays(n)
+#n - length of one part of the vector b (5*n vector for 3D)
 
-N    = length(b); # Number of variables
+N    = n; # Number of variables
 flag = 1;
 
 #--- Make sure we got good working default values -------------------------
@@ -61,9 +62,6 @@ J = zeros(N,N); #spzeros
 
 Steps = 1:1:N::Int64
 II=repeat(Steps,1,N);
-
-Abad=findall(iszero, A);
-II[Abad].=0;
 
 Jsubs=copy(J)
 
