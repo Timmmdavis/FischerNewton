@@ -4,7 +4,7 @@ function ResetInitArrays(Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys);
 Ints.iter= 1
 Ints.flag= 1;
 
-Flts.lambda=1.00
+#Flts.lambda=1.00
 
 for i=1:Ints.N
 
