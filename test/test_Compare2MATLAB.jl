@@ -44,9 +44,9 @@ if readtextfiles==true
 else
 	#We use MAT:
 	if Sys.iswindows()
-	    G=string(G,"\\test\\Matricies_1000.mat")
+	    G=string(G,"\\test\\Matricies.mat")
 	else
-		G=string(G,"/test/Matricies_1000.mat")
+		G=string(G,"/test/Matricies.mat")
 	end
 	println(G)
 	#Inputs - Loading influence matricies
@@ -73,7 +73,10 @@ printstyled("Vars loaded -> to fischerNewton func \n",color=:cyan)
 #@profile (x)=FischerNewton.fischer_newton(A,b);
 #Profile.print(format=:tree)#(format=:flat) (sortedby=:count)
 
-@time (x)=FischerNewton.fischer_newton(A,b);
+@time (Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys)=FischerNewton.InitArrays(A,b);
+@time (x)=FischerNewton.fischer_newton(A,b,Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys);
+(Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys)=FischerNewton.ResetInitArrays(Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys);
+@time (x)=FischerNewton.fischer_newton(A,b,Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys);
 printstyled("Out of func \n",color=:cyan)
 
 y = A*x+b;

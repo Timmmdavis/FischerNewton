@@ -1,4 +1,4 @@
-function fischer_newton(A,b)
+function fischer_newton(A,b,Vects,Arrys,Flts,Ints,Mats,Bls,IntArrys)
 #Note this is an edited version of the code NUM4LCP.m
 #Its recommended you use the original found at: 
 #(Niebe 2016) = Niebe, S. and Erleben, K., 2015. Numerical methods for linear complementarity problems in physics-based animation. Synthesis Lectures on Computer Graphics and Animation, 7(1), pp.1-159.
@@ -35,93 +35,53 @@ if length(size(b))>1
 	b=reshape(b,length(b));
 end
 
-N    = length(b); # Number of variables
-flag = 1;
+#Extract out of mat
+alpha=Flts.alpha
+beta=Flts.beta
+gamma=Flts.gamma
+rho=Flts.rho
+max_iter=Flts.max_iter
+tol_rel=Flts.tol_rel
+tol_abs=Flts.tol_abs
+lambda=Flts.lambda
 
-#--- Make sure we got good working default values -------------------------
-x = zeros(N);
-max_iter = floor(N/2);
-tol_rel = 0.0001;
-tol_abs = 10*eps(); # Order of 10th of numerical precision seems okay
-lambda = 1.00; # No support for penalization in other solvers
+iter=Ints.iter
+N=Ints.N
+flag=Ints.flag
+useSparse=Ints.useSparse
 
-#--- Make sure all values are valid ---------------------------------------
-max_iter = max(max_iter,1.0);
-tol_rel  = max(tol_rel,0.0);
-tol_abs  = max(tol_abs,0.0);
-x.= max.(x,0.0);
+y=Vects.y 
+phi=Vects.phi
+phi_k=Vects.phi_k
+phi_l=Vects.phi_l
+phiM=Vects.phiM
+dx=Vects.dx
+absdx=Vects.absdx
+y_k=Vects.y_k
+xdxtau=Vects.xdxtau
+x_k=Vects.x_k
+x=Vects.x
 
-#--- Here comes a bunch of magic constants --------------------------------
+err=Arrys.err
+nabdx=Arrys.nabdx
+test=Arrys.test
+grad_f=Arrys.grad_f
+f_k=Arrys.f_k
 
-#Using the 'zero' solver as described in the original function
-#solver="zero";   
+J=Mats.J
+Jsubs=Mats.Jsubs
+JJ=Mats.JJ
+ISml=Mats.ISml
+JSml=Mats.JSml
+VSml=Mats.VSml
+phiT=Mats.phiT
+phi_kT=Mats.phi_kT
+nabla_phi=Mats.nabla_phi
 
-#doesn't make much diff
-# h       = 1e-7;    # Fixed constant used to evaluate the directional detivative - not used in zero solver
-alpha   = 0.5;     # Step reduction parameter for projected Armijo backtracking line search
-beta    = 0.001;   # Sufficent decrease parameter for projected Armijo backtracking line search
-gamma   = 1e-28;   # Perturbation values used to fix near singular points in derivative
-rho     = eps();     # Descent direction test parameter used to test if the Newton direction does a good enough job.
-
-#--- Setup values need while iterating ------------------------------------
-
-err = [Inf];         # Current error measure
-iter= 1;           # Iteration count
-n 	=[0]; 
-nabdx 	=[0.]
-old_err =err;
-#vectors
-y 	=zeros(N);
-phi =copy(y);
-phiT=zeros(1,N);
-phi_k 	=copy(y); 
-phi_kT 	=zeros(1,N);
-phi_l 	=copy(y); 
-phiM 	=copy(y);
-dx 	=copy(y);  
-absdx 	=copy(y); 
-y_k =copy(y);
-xdxtau 	=copy(y);
-x_k 	= copy(y);
-nabla_phi=similar(phiT);
-
-test=[0.0];
-grad_f=[0.0];
-f_k=[0.0]
-tau=0.0;
-
-I=zeros(Int64, N)
-I=convert(Array{Bool,1},I) #convert to bool
-J = zeros(N,N); #spzeros
-
-Steps = 1:1:N::Int64
-II=repeat(Steps,1,N);
+I=Bls.I
+II=IntArrys.II
 
 
-Abad=findall(iszero, A);
-II[Abad].=0;
-
-
-Jsubs=copy(J)
-
-#totaltime1=0.;
-#totaltime2=0.;
-#tic=time()		
-#toc=time()
-#println("Elapsed time")
-#println(toc-tic)
-
-useSparse=false
-
-if useSparse==true
-	#SparseMat stuff:
-	JJ=transpose(II);
-	JJ[Abad].=0; #Bad bits are zero (dropped later)
-	#Preallocate some vectors to work with
-	ISml=zeros(N^2)
-	JSml=zeros(N^2)
-	VSml=zeros(N^2)
-end
 
 Indx=0;
 while (iter <= max_iter )
@@ -168,7 +128,7 @@ while (iter <= max_iter )
 	end
 	
 	#Function that creates Matrix J (sparse if using 2nd func)	
-	if useSparse==false
+	if useSparse==0
 		J=WorkOnJ(J,A,x,y,I,II)
 	else
 		J=WorkOnJ_Sparse(A,x,y,I,II,JJ,ISml,JSml,VSml,N)	
@@ -397,4 +357,10 @@ end
 
 return(phi_l)
 
+end
+
+
+function f(dx,I) 
+   dxSubset=view(dx,I);
+   return dxSubset
 end
