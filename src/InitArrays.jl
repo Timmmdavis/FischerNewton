@@ -41,20 +41,21 @@ f_k=[0.0]
 
 
 #vectors
-y 	=zeros(N);
-phi =copy(y);
-phiT=zeros(1,N);
+y 		=zeros(N);
+phi 	=copy(y);
 phi_k 	=copy(y); 
-phi_kT 	=zeros(1,N);
 phi_l 	=copy(y); 
 phiM 	=copy(y);
-dx 	=copy(y);  
+dx 		=copy(y);  
 absdx 	=copy(y); 
-y_k =copy(y);
+y_k 	=copy(y);
 xdxtau 	=copy(y);
-x_k 	= copy(y);
-nabla_phi=similar(phiT);
+x_k 	=copy(y);
 
+
+phiT 	=zeros(1,N);
+phi_kT 	=zeros(1,N);
+nabla_phi=similar(phiT);
 
 I=zeros(Int64, N)
 I=convert(Array{Bool,1},I) #convert to bool
@@ -64,13 +65,6 @@ Steps = 1:1:N::Int64
 II=repeat(Steps,1,N);
 
 Jsubs=copy(J)
-
-#totaltime1=0.;
-#totaltime2=0.;
-#tic=time()		
-#toc=time()
-#println("Elapsed time")
-#println(toc-tic)
 
 useSparse=0
 
