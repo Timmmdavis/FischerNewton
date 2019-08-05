@@ -35,7 +35,7 @@ Arrys.grad_f[1]=0.0
 Arrys.f_k[1]=0.0
 
 fill!(Mats.J, 0.0)
-fill!(Mats.JSubs, 0.0)
+fill!(Mats.Jsubs, 0.0)
 
 if Ints.useSparse==1
 	for i=1:Ints.N^2
