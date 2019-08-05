@@ -67,6 +67,7 @@ nabdx=Arrys.nabdx
 test=Arrys.test
 grad_f=Arrys.grad_f
 f_k=Arrys.f_k
+old_err=Arrys.old_err
 
 J=Mats.J
 Jsubs=Mats.Jsubs
@@ -96,13 +97,13 @@ while (iter <= max_iter )
 	#--- Test all stopping criteria used ------------------------------------
 	phi = phi_lambda!(y, x, lambda,phi,phi_l);         # Calculate fischer function
 	
-	old_err = err[1];
+	old_err[1] = err[1];
 	for i=1:length(phi); phiT[i]=phi[i]; end #transpose
 	# Natural merit function
 	mul!(err,phiT,phi)
 	err[1]=err[1]*0.5     
 
-	if (abs(err[1]-old_err) / abs(old_err)) < tol_rel  # Relative stopping criteria
+	if (abs(err[1]-old_err[1]) / abs(old_err[1])) < tol_rel  # Relative stopping criteria
 		flag = 3;
 		break;
 	end

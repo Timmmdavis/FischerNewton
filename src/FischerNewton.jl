@@ -49,6 +49,7 @@ mutable struct Arrays{T<:Array}
     test::T
     grad_f::T
     f_k::T
+    old_err::T
 end
 
 mutable struct Matricies{T<:Array}

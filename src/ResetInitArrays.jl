@@ -28,7 +28,7 @@ for i=1:Ints.N
 end
 
 Arrys.err[1]=Inf
-Arrys.old_err[1]=Arrys.err
+Arrys.old_err[1]=Inf
 Arrys.nabdx[1]=0.;
 Arrys.test[1]=0.0;
 Arrys.grad_f[1]=0.0

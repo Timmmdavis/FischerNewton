@@ -34,7 +34,7 @@ rho     = eps();     # Descent direction test parameter used to test if the Newt
 err = [Inf];         # Current error measure
 iter= 1;           # Iteration count
 nabdx 	=[0.]
-old_err =err;
+old_err =[Inf]; 
 test=[0.0];
 grad_f=[0.0];
 f_k=[0.0]
@@ -79,7 +79,7 @@ if useSparse==1
 end
 
 Vects=Vectors(y, phi, phi_k, phi_l, phiM, dx, absdx, y_k, xdxtau, x_k, x)
-Arrys=Arrays(err, nabdx, test, grad_f, f_k)
+Arrys=Arrays(err, nabdx, test, grad_f, f_k,old_err)
 Flts=Float(alpha,beta,gamma,rho,max_iter,tol_rel,tol_abs,lambda)
 Ints=Int(iter,N,flag,useSparse)
 
