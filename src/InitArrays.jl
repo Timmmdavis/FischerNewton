@@ -80,8 +80,8 @@ end
 
 Vects=Vectors(y, phi, phi_k, phi_l, phiM, dx, absdx, y_k, xdxtau, x_k, x)
 Arrys=Arrays(err, nabdx, test, grad_f, f_k,old_err)
-Flts=Float(alpha,beta,gamma,rho,max_iter,tol_rel,tol_abs,lambda)
-Ints=Int(iter,N,flag,useSparse)
+Flts=Floats(alpha,beta,gamma,rho,max_iter,tol_rel,tol_abs,lambda)
+Ints=Integers(iter,N,flag,useSparse)
 
 if useSparse==1
 	Mats=Matricies(J, Jsubs, JJ, ISml, JSml, VSml, phiT, phi_kT, nabla_phi)

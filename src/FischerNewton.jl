@@ -10,7 +10,7 @@ using Krylov
 #using Profile
 #using InteractiveUtils
 
-struct Float{T<:Float64}
+struct Floats{T<:Float64}
     alpha::T
     beta::T
     gamma::T
@@ -21,7 +21,7 @@ struct Float{T<:Float64}
     lambda::T
 end
 
-mutable struct Int{T<:Int64}
+mutable struct Integers{T<:Int64}
     iter::T
     N::T
     flag::T
