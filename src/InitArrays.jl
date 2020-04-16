@@ -80,7 +80,7 @@ end
 
 Vects=Vectors(y, phi, phi_k, phi_l, phiM, dx, absdx, y_k, xdxtau, x_k, x)
 Arrys=Arrays(err, nabdx, test, grad_f, f_k,old_err)
-Flts=Floats(alpha,beta,gamma,rho,max_iter,tol_rel,tol_abs,lambda)
+Flts=FloatVals(alpha,beta,gamma,rho,max_iter,tol_rel,tol_abs,lambda)
 Ints=Integers(iter,N,flag,useSparse)
 
 if useSparse==1
