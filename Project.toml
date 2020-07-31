@@ -19,6 +19,6 @@ FastClosures = "= 0.2.1"
 IterativeSolvers = "= 0.8.1"
 Krylov = "= 0.4.1"
 LinearOperators = "= 1.1.0"
-RecipesBase = "= 0.8.0"
+RecipesBase = "= 0.7.0"
 
 
