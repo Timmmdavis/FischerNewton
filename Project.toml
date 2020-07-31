@@ -16,7 +16,7 @@ RecipesBase="3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 
 [compat]
 FastClosures = "= 0.3.2"
-IterativeSolvers = "= 0.8.4"
+IterativeSolvers = "= 0.8.1"
 Krylov = "= 0.4.1"
 LinearOperators = "= 1.1.0"
 RecipesBase = "= 0.8.0"
