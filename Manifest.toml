@@ -57,7 +57,7 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 deps = ["FastClosures", "LinearAlgebra", "Printf", "SparseArrays", "Test"]
 git-tree-sha1 = "316d05c6b0df402efc110a3cfb0c0a365171fb51"
 uuid = "5c8ed15e-5a4c-59e4-a42b-c7e8811fb125"
-version = "0.5.4"
+version = "1.1.0"
 
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
