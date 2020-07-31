@@ -20,5 +20,5 @@ IterativeSolvers = "= 0.8.4"
 Krylov = "= 0.4.1"
 LinearOperators = "= 1.1.0"
 RecipesBase = "= 0.8.0"
-TimerOutputs = "= 0.5.6"
+
 
