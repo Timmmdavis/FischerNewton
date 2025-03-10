@@ -14,11 +14,4 @@ LinearOperators="5c8ed15e-5a4c-59e4-a42b-c7e8811fb125"
 FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 
-[compat]
-FastClosures = "= 0.2.1"
-IterativeSolvers = "= 0.8.1"
-Krylov = "= 0.4.1"
-LinearOperators = "= 1.1.0"
-RecipesBase = "= 0.6.0"
-
 
