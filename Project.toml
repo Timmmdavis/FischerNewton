@@ -1,7 +1,7 @@
 name = "FischerNewton"
 uuid = "c8104aa0-3b89-11e9-0761-c1f9341838a7"
 authors = ["Tim Davis <davis@gfz-potsdam.de>"]
-version = "0.1.0"
+version = "0.1.4"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
